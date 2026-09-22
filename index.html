@@ -1,32 +1,3 @@
-Dưới đây là kết quả kiểm tra toàn bộ mã nguồn từ file **"Ma code.txt"** và file **`index.html` hoàn chỉnh** đã phục hồi 100% tất cả các chức năng, tab giao diện và xử lý toàn bộ các lỗi cú pháp ban đầu.
-
----
-
-### 1. Nguyên nhân trang web trước đó chưa hiển thị đủ chức năng
-
-Trong các bước sửa lỗi trước, để khắc phục nhanh lỗi trang trắng (do lỗi cú pháp chuỗi Template Literal và truy cập mảng), giao diện đã bị thu gọn về bảng mẫu đơn giản. 
-
-Mã gốc trong file **"Ma code.txt"** chứa **7 tab chức năng quản lý độc lập** cùng rất nhiều mô-đun phức tạp:
-1. **Thống kê Quy hoạch Chung (`STATS_CHUNG`)**: Thẻ chỉ số tổng quan, biểu đồ tròn SVG phân bổ tiến độ, chi tiết nhóm hoàn thành và tính năng **Xuất báo cáo thông minh**.
-2. **Thống kê Quy hoạch Chi tiết (`STATS_CHITIET`)**: Bảng thống kê tiến độ lập quy hoạch chi tiết theo từng Huyện/Thị xã thuộc cả 2 khu vực tỉnh **Gia Lai** và **Bình Định**.
-3. **Bảng Theo dõi Quy hoạch Chung (`MAIN`)**: Bảng dữ liệu đầy đủ (135+ đơn vị hành chính), bộ lọc đa cột (Huyện, Tình trạng phê duyệt, Thẩm quyền, Công bố, Cắm mốc, Kế hoạch, Gửi Sở XD), liên kết tải file đính kèm, liên kết bản đồ, các nút Thêm/Sửa/Xóa.
-4. **Rà soát Định hướng Phát triển Cụm Huyện Cũ (`REVIEW`)**: Bảng rà soát nội dung phát triển theo vùng huyện cũ, trạng thái rà soát, cơ quan phụ trách, xuất Excel và quản lý nội dung.
-5. **Bảng Theo dõi Quy hoạch Chi tiết (`MAIN_CHITIET`)**: Theo dõi quy hoạch chi tiết 1/500 các điểm dân cư, khu trung tâm xã/phường, lọc theo Xã/Phường.
-6. **Tra cứu Sáp nhập ĐVHC (`MERGE`)**: Bộ lọc tra cứu các đơn vị hành chính cũ bị sáp nhập thành xã/phường mới theo **Nghị quyết 1664/NQ-UBTVQH15**, xuất Excel CSV.
-7. **Đầu mối Liên hệ Các Xã/Phường (`CONTACTS`)**: Danh bạ cán bộ phụ trách (Họ tên, SĐT gọi trực tiếp `tel:`, Email `mailto:`).
-
-Ngoài ra còn có các mô-đun nâng cao:
-* **Hệ thống Quản trị & Khôi phục mật khẩu**: Đăng nhập Admin (`admin` / `123456`), Quên mật khẩu qua OTP 6 số tự động sinh, Đổi mật khẩu.
-* **Quản lý CSDL Đám mây & File**: Tải bản sao lưu CSDL (.json), Phục hồi CSDL từ JSON, Khôi phục CSDL gốc, Nạp dữ liệu từ file Excel CSV thông minh (tự động dò cột và gộp ô).
-* **Báo cáo Thông minh & Xem trước In A4**: Mô phỏng đọc đề cương PDF/DOCX, điền số liệu tự động và xem trước trang in chuẩn khổ A4 (SỞ XÂY DỰNG GIA LAI / CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM) sẵn sàng in PDF (`window.print()`).
-
----
-
-### 2. File `index.html` Hoàn Chỉnh (Sẵn sàng Upload GitHub Pages)
-
-Vui lòng sao chép toàn bộ mã dưới đây và dán đè vào file **`index.html`** trên GitHub Repository của bạn:
-
-```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
