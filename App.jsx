@@ -4,10 +4,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch, getDocs, getDoc } from 'firebase/firestore';
 
-// Khởi tạo cấu hình an toàn cho Firebase
-const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config ? JSON.parse(__firebase_config) : {
-  apiKey: "mock-api-key", authDomain: "://firebaseapp.com", projectId: "mock-id", storageBucket: "://appspot.com", messagingSenderId: "000000", appId: "1:000:web:000"
-};
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -151,4 +148,1348 @@ const generateDetailRecords = () => {
               id: i, tinhMoi: 'Gia Lai', tinhCu: prov.province, huyen: dist.name, xa: comm,
               tenQh: j === 0 ? `Quy hoạch chi tiết khu trung tâm ${comm.toLowerCase()} (Tỷ lệ 1/500)` : `Quy hoạch chi tiết điểm dân cư số ${j} thuộc ${comm.toLowerCase()} (Tỷ lệ 1/500)`,
               dienTich: (10 + (i % 40)).toFixed(2), danSo: (1000 + (i * 15)).toLocaleString('en-US'),
-              cqToChuc: UBND ${comm.replace('Xã ', 'xã ').replace('P. ', 'phường ')},cqPheDuyet: UBND ${dist.name}, cqThamDinh: Phòng Kinh tế / Quản lý Đô thị,bcThamDinh: isApproved ? ${200 + i}/BC-UBND : 'Đang cập nhật', yKienSxd: 'Phân cấp địa phương',qdPheDuyet: isApproved ? ${2000 + i}/QĐ-UBND : 'Đang cập nhật',congBo: isApproved ? 'Đã công bố' : 'Chưa công bố',camMoc: isApproved ? 'Đã cắm mốc' : 'Chưa cắm mốc',keHoach: isApproved ? 'Đã ban hành' : 'Đang cập nhật',file: '', mapLink: '',tinhHinhGuiHoSo: isApproved ? 'Đã gửi' : 'Chưa gửi',ghiChu: 'Cụ thể hóa QHC'});}});});});return data;};export default function App() {const [firebaseUser, setFirebaseUser] = useState(null);const [isLoggedIn, setIsLoggedIn] = useState(false);const [showLoginModal, setShowLoginModal] = useState(false);const [showDbModal, setShowDbModal] = useState(false);const [showChangePassModal, setShowChangePassModal] = useState(false);// LOGIN & RECOVERY STATEconst [loginForm, setLoginForm] = useState({ username: '', password: '' });const [loginError, setLoginError] = useState('');const [changePassForm, setChangePassForm] = useState({ current: '', newPass: '', confirm: '' });const [changePassError, setChangePassError] = useState('');const [adminPassword, setAdminPassword] = useState('123456');const [showForgotPassModal, setShowForgotPassModal] = useState(false);const [forgotPassStep, setForgotPassStep] = useState(1);const [recoveryPhone, setRecoveryPhone] = useState('');const [recoveryOTP, setRecoveryOTP] = useState('');const [realGeneratedOTP, setRealGeneratedOTP] = useState('');const [newRecoveryPass, setNewRecoveryPass] = useState('');const [recoveryError, setRecoveryError] = useState('');const ADMIN_PHONE = '0385118757';const ADMIN_EMAIL = 'dangvinhtoi@gmail.com';const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });const [notification, setNotification] = useState('');const [activeTab, setActiveTab] = useState('STATS_CHUNG');const [data, setData] = useState([]);const [detailData, setDetailData] = useState([]);const [mergedData, setMergedData] = useState([]);const [contactData, setContactData] = useState([]);const [reviewData, setReviewData] = useState([]);// BỘ LỌC QH CHUNGconst [searchTerm, setSearchTerm] = useState('');const [filterHuyen, setFilterHuyen] = useState('');const [filterTinhTrang, setFilterTinhTrang] = useState('');const [filterThamQuyen, setFilterThamQuyen] = useState('');const [filterCongBo, setFilterCongBo] = useState('');const [filterCamMoc, setFilterCamMoc] = useState('');const [filterKeHoach, setFilterKeHoach] = useState('');const [filterGuiSXD, setFilterGuiSXD] = useState('');// BỘ LỌC QH CHI TIẾTconst [detailSearchTerm, setDetailSearchTerm] = useState('');const [detailFilterHuyen, setDetailFilterHuyen] = useState('');const [detailFilterXa, setDetailFilterXa] = useState('');const [detailFilterTinhTrang, setDetailFilterTinhTrang] = useState('');const [detailFilterCongBo, setDetailFilterCongBo] = useState('');const [detailFilterCamMoc, setDetailFilterCamMoc] = useState('');const [detailFilterGuiSXD, setDetailFilterGuiSXD] = useState('');// BỘ LỌC SÁP NHẬPconst [mergeFilterHuyen, setMergeFilterHuyen] = useState('');const [mergeFilterXa, setMergeFilterXa] = useState('');// BỘ LỌC LIÊN HỆconst [contactSearchTerm, setContactSearchTerm] = useState('');const [contactFilterHuyen, setContactFilterHuyen] = useState('');// BỘ LỌC RÀ SOÁTconst [reviewSearchTerm, setReviewSearchTerm] = useState('');const [reviewFilterHuyen, setReviewFilterHuyen] = useState('');const [reviewFilterStatus, setReviewFilterStatus] = useState('');// STATE MODALSconst [isModalOpen, setIsModalOpen] = useState(false);const [editingRecord, setEditingRecord] = useState(null);const [formData, setFormData] = useState({});const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);const [editingMergeRecord, setEditingMergeRecord] = useState(null);const [mergeFormData, setMergeFormData] = useState({});const [isContactModalOpen, setIsContactModalOpen] = useState(false);const [editingContactRecord, setEditingContactRecord] = useState(null);const [contactFormData, setContactFormData] = useState({});const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);const [editingReviewRecord, setEditingReviewRecord] = useState(null);const [reviewFormData, setReviewFormData] = useState({});// STATE BÁO CÁO THÔNG MINHconst [reportModal, setReportModal] = useState({ isOpen: false, type: 'CHUNG' });const [reportFile, setReportFile] = useState(null);const [reportProgress, setReportProgress] = useState(0);const [reportStatus, setReportStatus] = useState('');const [showGeneratedReport, setShowGeneratedReport] = useState(false);useEffect(() => {const initAuth = async () => {try {if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);else await signInAnonymously(auth);} catch (e) {console.log("Firebase Auth Offline fallback");setFirebaseUser({ isAnonymous: true, uid: "offline-user" });}};initAuth();const unsubscribe = onAuthStateChanged(auth, (user) => {if (user) setFirebaseUser(user);});return () => unsubscribe();}, []);useEffect(() => {if (!firebaseUser) {// Khởi tạo dữ liệu offline dự phòng nếu không kết nối được FirebasesetData(generate135Records());setDetailData(generateDetailRecords());setMergedData(INITIAL_MERGED_DATA);return;}const collChung = collection(db, 'artifacts', appId, 'public', 'data', 'qh_chung');const collChiTiet = collection(db, 'artifacts', appId, 'public', 'data', 'qh_chitiet');const collSapNhap = collection(db, 'artifacts', appId, 'public', 'data', 'qh_sapnhap');const collDanhBa = collection(db, 'artifacts', appId, 'public', 'data', 'qh_lienhe');const collRaSoat = collection(db, 'artifacts', appId, 'public', 'data', 'qh_rasoat');const collConfig = collection(db, 'artifacts', appId, 'public', 'data', 'config');const unsubConfig = onSnapshot(collConfig, (snapshot) => {let found = false;snapshot.forEach(docSnap => {if (docSnap.id === 'admin') { setAdminPassword(docSnap.data().password || '123456'); found = true; }});if (!found) setAdminPassword('123456');});const checkAndInitDB = async () => {try {const sysRef = doc(collConfig, 'system');const sysDoc = await getDoc(sysRef);if (!sysDoc.exists()) {const qhChungSnap = await getDocs(collChung);if (qhChungSnap.empty) {const batch1 = writeBatch(db); generate135Records().forEach(item => batch1.set(doc(collChung, item.id.toString()), item)); await batch1.commit();const batch2 = writeBatch(db); generateDetailRecords().forEach(item => batch2.set(doc(collChiTiet, item.id.toString()), item)); await batch2.commit();const batch3 = writeBatch(db); INITIAL_MERGED_DATA.forEach(item => batch3.set(doc(collSapNhap, item.id.toString()), item)); await batch3.commit();await setDoc(sysRef, { initialized: true });} else await setDoc(sysRef, { initialized: true });}} catch(err) { console.error('Lỗi khi kiểm tra khởi tạo:', err); }};checkAndInitDB();const unsubChung = onSnapshot(collChung, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));fetchedData.sort((a, b) => a.id - b.id); setData(fetchedData.length ? fetchedData : generate135Records());}, () => setData(generate135Records()));const unsubChiTiet = onSnapshot(collChiTiet, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));fetchedData.sort((a, b) => a.id - b.id); setDetailData(fetchedData.length ? fetchedData : generateDetailRecords());}, () => setDetailData(generateDetailRecords()));const unsubSapNhap = onSnapshot(collSapNhap, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));fetchedData.sort((a, b) => a.id - b.id); setMergedData(fetchedData.length ? fetchedData : INITIAL_MERGED_DATA);}, () => setMergedData(INITIAL_MERGED_DATA));const unsubContact = onSnapshot(collDanhBa, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: docSnap.id }));fetchedData.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0)); setContactData(fetchedData);});const unsubRaSoat = onSnapshot(collRaSoat, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: docSnap.id }));fetchedData.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0)); setReviewData(fetchedData);});return () => { unsubChung(); unsubChiTiet(); unsubSapNhap(); unsubContact(); unsubRaSoat(); unsubConfig(); };}, [firebaseUser]);const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(''), 4000); };const openConfirm = (title, message, onConfirm) => setConfirmDialog({ isOpen: true, title, message, onConfirm });const closeConfirm = () => setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: null });const COLUMNS = [{ key: 'stt', label: 'STT', width: 'w-12' },{ key: 'tinhMoi', label: 'Tỉnh mới', width: 'w-24' },{ key: 'tinhCu', label: 'Tỉnh cũ', width: 'w-24' },{ key: 'huyen', label: 'Huyện/Thị xã', width: 'w-36' },{ key: 'xa', label: 'Xã/Phường', width: 'w-36' },{ key: 'tenQh', label: 'Tên quy hoạch', width: 'min-w-[250px] max-w-[350px]' },{ key: 'dienTich', label: 'Diện tích (ha)', width: 'w-28' },{ key: 'danSo', label: 'Dân số (2025/2035/2045)', width: 'w-32' },{ key: 'cqToChuc', label: 'CQ tổ chức lập', width: 'w-40' },{ key: 'cqPheDuyet', label: 'CQ phê duyệt', width: 'w-40' },{ key: 'cqThamDinh', label: 'CQ thẩm định', width: 'w-40' },{ key: 'bcThamDinh', label: 'BC thẩm định', width: 'w-36' },{ key: 'yKienSxd', label: 'Ý kiến Sở XD', width: 'w-36' },{ key: 'qdPheDuyet', label: 'QĐ phê duyệt', width: 'w-36' },{ key: 'congBo', label: 'Công bố', width: 'w-28' },{ key: 'camMoc', label: 'Cắm mốc', width: 'w-28' },{ key: 'keHoach', label: 'Kế hoạch TH', width: 'w-36' },{ key: 'file', label: 'Đính kèm', width: 'w-24' },{ key: 'mapLink', label: 'Bản đồ', width: 'w-24' },{ key: 'tinhHinhGuiHoSo', label: 'Gửi hồ sơ SXD', width: 'w-36' },{ key: 'ghiChu', label: 'Ghi chú', width: 'min-w-[150px] max-w-[250px]' }];// EXPORT EXCEL & CSV HANDLERSconst handleExportExcel = (exportData, sheetName, isDetail = false) => {if (!exportData || exportData.length === 0) return showNotification('Không có dữ liệu để xuất!');const headers = COLUMNS.map(col => "${isDetail && col.key === 'danSo' ? 'Dân số' : col.label}").join(',');const rows = exportData.map((row, index) => {return COLUMNS.map(col => "${(col.key === 'stt' ? (index + 1) : (row[col.key] || '')).toString().replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " ")}").join(',');});const csvContent = [headers, ...rows].join('\n');const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });const link = document.createElement('a'); link.href = URL.createObjectURL(blob);link.download = ${sheetName}_${new Date().getTime()}.csv; link.click();};const handleExportMergeExcel = () => {if (filteredMergeData.length === 0) return showNotification('Không có dữ liệu để xuất!');const headers = '"STT","Tỉnh cũ","Huyện/Thị xã","Xã/Phường MỚI","Các Xã/Phường CŨ","Căn cứ pháp lý"';const rows = filteredMergeData.map((row, index) => "${index + 1}","${row.tinhCu || ''}","${row.huyen || ''}","${row.xaMoi || ''}","${Array.isArray(row.cacXaCu) ? row.cacXaCu.join('; ') : (row.cacXaCu||'') }","${row.canCu || ''}");const csvContent = [headers, ...rows].join('\n');const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });const link = document.createElement('a'); link.href = URL.createObjectURL(blob);link.download = DS_SapNhapDVHC_${new Date().getTime()}.csv; link.click();};const handleExportContactExcel = () => {if (filteredContactData.length === 0) return showNotification('Không có dữ liệu để xuất!');const headers = '"STT","Đơn vị","Họ và tên","Điện thoại","Chức danh","Email"';const rows = filteredContactData.map((row, index) => "${index + 1}","${row.donVi || ''}","${row.hoTen || ''}","${row.dienThoai || ''}","${row.chucDanh || ''}","${row.email || ''}");const csvContent = [headers, ...rows].join('\n');const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });const link = document.createElement('a'); link.href = URL.createObjectURL(blob);link.download = DanhBa_LienHe_${new Date().getTime()}.csv; link.click();};const handleExportReviewExcel = () => {if (filteredReviewData.length === 0) return showNotification('Không có dữ liệu để xuất!');const headers = '"STT","Tỉnh (Cũ)","Huyện/Thị xã (Cũ)","Nội dung định hướng phát triển","Đơn vị phụ trách","Trạng thái rà soát","Ghi chú","Đính kèm"';const rows = filteredReviewData.map((row, index) => "${index + 1}","${row.tinhCu || ''}","${row.huyen || ''}","${(row.noiDung || '').replace(/"/g, '""')}","${row.coQuan || ''}","${row.trangThai || ''}","${(row.ghiChu || '').replace(/"/g, '""')}","${row.file || ''}");const csvContent = [headers, ...rows].join('\n');const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });const link = document.createElement('a'); link.href = URL.createObjectURL(blob);link.download = RaSoatDinhHuong_${new Date().getTime()}.csv; link.click();};const handleExportDB = () => {const exportObj = { qhChung: data, qhChiTiet: detailData, qhSapNhap: mergedData, qhLienHe: contactData, qhRaSoat: reviewData };const jsonString = JSON.stringify(exportObj);const blob = new Blob([jsonString], { type: "application/json" });const url = URL.createObjectURL(blob);const downloadAnchorNode = document.createElement('a');downloadAnchorNode.setAttribute("href", url);downloadAnchorNode.setAttribute("download", QuyHoachGiaLai_Backup_${new Date().getTime()}.json);document.body.appendChild(downloadAnchorNode);downloadAnchorNode.click();downloadAnchorNode.remove();URL.revokeObjectURL(url);showNotification('Đã tải xuống bản sao lưu dữ liệu!');};const handleImportDB = (e) => {const file = e.target.files[0];if (!file) return;const reader = new FileReader();reader.onload = async (event) => {try {let rawData = event.target.result;if (rawData.charCodeAt(0) === 0xFEFF) rawData = rawData.slice(1);const jsonData = JSON.parse(rawData);openConfirm('Xác nhận phục hồi', 'Hệ thống sẽ XÓA TOÀN BỘ dữ liệu hiện tại và nạp lại bằng file của bạn. Xác nhận?', async () => {closeConfirm(); setShowDbModal(false);setData(jsonData.qhChung || []);setDetailData(jsonData.qhChiTiet || []);setMergedData(jsonData.qhSapNhap || []);setContactData(jsonData.qhLienHe || []);setReviewData(jsonData.qhRaSoat || []);showNotification('Phục hồi dữ liệu cấu hình thành công!');});} catch (error) { showNotification(Lỗi định dạng file: ${error.message}); }};reader.readAsText(file, "UTF-8");e.target.value = '';};const handleResetToDefaultDB = () => {openConfirm('Khôi phục CSDL Gốc', 'Hệ thống sẽ XÓA SẠCH dữ liệu hiện tại và nạp lại cấu hình gốc. Có tiếp tục?', () => {closeConfirm(); setShowDbModal(false);setData(generate135Records());setDetailData(generateDetailRecords());setMergedData(INITIAL_MERGED_DATA);setContactData([]);setReviewData([]);setAdminPassword('123456');showNotification('Khôi phục CSDL gốc thành công!');});};const parseCSVLine = (text) => {const rows = []; let current = ''; let inQuotes = false;for (let i = 0; i < text.length; i++) {let char = text[i];if (char === '"' && text[i+1] === '"') { current += '"'; i++; }else if (char === '"') { inQuotes = !inQuotes; }else if (char === '\n' && !inQuotes) { rows.push(current); current = ''; }else { current += char; }}if (current) rows.push(current);return rows;};const parseCSVColumns = (row, separator) => {const cols = []; let current = ''; let inQuotes = false;for (let i = 0; i < row.length; i++) {let char = row[i];if (char === '"' && row[i+1] === '"') { current += '"'; i++; }else if (char === '"') { inQuotes = !inQuotes; }else if (char === separator && !inQuotes) { cols.push(current.trim()); current = ''; }else { current += char; }}cols.push(current.trim());return cols;};const handleImportCSV = (e, type) => {const file = e.target.files[0];if (!file) return;const reader = new FileReader();reader.onload = async (event) => {try {let rawData = event.target.result;if (rawData.charCodeAt(0) === 0xFEFF) rawData = rawData.slice(1);const lines = parseCSVLine(rawData).filter(l => l.trim());if (lines.length < 2) return showNotification('File không có dữ liệu!');let separator = ',';if (lines[0].indexOf(';') > lines[0].indexOf(',')) separator = ';';const headers = parseCSVColumns(lines[0], separator).map(h => h.toLowerCase().trim().replace(/['"]/g, ''));const recordsToSave = [];let lastDonVi = ''; let lastHuyen = ''; let lastTinh = '';for (let i = 1; i < lines.length; i++) {let cols = parseCSVColumns(lines[i], separator);const rawItem = {};headers.forEach((h, index) => { rawItem[h] = cols[index] ? cols[index].trim() : ''; });const getVal = (keys) => {for (let k of keys) {const found = Object.keys(rawItem).find(rk => rk.includes(k));if (found && rawItem[found]) return rawItem[found];}return '';};if (type === 'CHUNG' || type === 'CHITIET') {const item = {id: parseInt(getVal(['stt','id'])) || (Date.now() + i),tinhMoi: 'Gia Lai', tinhCu: getVal(['tỉnh cũ']),huyen: getVal(['huyện','thị xã','thành phố']), xa: getVal(['xã','phường']),tenQh: getVal(['tên quy hoạch','tên qh']), dienTich: getVal(['diện tích']), danSo: getVal(['dân số']),cqToChuc: getVal(['tổ chức','cq tổ chức']), cqPheDuyet: getVal(['cơ quan phê duyệt','cq phê duyệt']),cqThamDinh: getVal(['thẩm định']), bcThamDinh: getVal(['báo cáo thẩm định']),yKienSxd: getVal(['ý kiến','sxd']), qdPheDuyet: getVal(['quyết định','qđ']),congBo: getVal(['công bố']), camMoc: getVal(['cắm mốc']), keHoach: getVal(['kế hoạch']),file: getVal(['file','đính kèm']), mapLink: getVal(['bản đồ']),tinhHinhGuiHoSo: getVal(['gửi hồ sơ']), ghiChu: getVal(['ghi chú'])};if (item.huyen && item.xa) recordsToSave.push(item);}else if (type === 'LIENHE') {let donVi = getVal(['đơn vị', 'huyện', 'xã']);if (donVi) lastDonVi = donVi; else donVi = lastDonVi;const hoTen = getVal(['họ và tên', 'họ tên']);const dienThoai = getVal(['điện thoại', 'sđt']);if (hoTen || dienThoai) recordsToSave.push({ id: Date.now().toString() + i, donVi, hoTen, dienThoai, chucDanh: getVal(['chức danh']), email: getVal(['email']) });}else if (type === 'SAPNHAP') {let tinh = getVal(['tỉnh']); let huyen = getVal(['huyện']);if (tinh) lastTinh = tinh; else tinh = lastTinh;if (huyen) lastHuyen = huyen; else huyen = lastHuyen;const xaMoi = getVal(['xã mới', 'phường mới']);let cacXaCuStr = getVal(['xã cũ', 'phường cũ']);if (xaMoi) recordsToSave.push({ id: Date.now().toString() + i, tinhCu: tinh, huyen, xaMoi, cacXaCu: cacXaCuStr ? cacXaCuStr.split(',').map(s=>s.trim()) : [], canCu: getVal(['căn cứ']) || 'Nghị quyết 1664/NQ-UBTVQH15' });}}if (recordsToSave.length === 0) return showNotification('Không tìm thấy dữ liệu hợp lệ!');openConfirm('Xác nhận nạp CSV', Nạp thêm ${recordsToSave.length} dòng dữ liệu từ file CSV vào hệ thống?, () => {closeConfirm(); setShowDbModal(false);if (type === 'CHUNG') setData(recordsToSave);else if (type === 'CHITIET') setDetailData(recordsToSave);else if (type === 'LIENHE') setContactData(recordsToSave);else if (type === 'SAPNHAP') setMergedData(recordsToSave);showNotification('Nạp dữ liệu CSV thành công!');});} catch (error) { showNotification('Lỗi đọc file CSV!'); }};reader.readAsText(file, "UTF-8"); e.target.value = '';};// FILTER LOGICconst filteredData = useMemo(() => {return data.filter(item => {const matchSearch = (item.xa||'').toLowerCase().includes(searchTerm.toLowerCase()) || (item.tenQh||'').toLowerCase().includes(searchTerm.toLowerCase());const matchHuyen = filterHuyen === '' ? true : item.huyen === filterHuyen;const isPheDuyet = item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật' && item.qdPheDuyet.trim() !== '';const matchTinhTrang = filterTinhTrang === '' ? true : filterTinhTrang === 'Đã phê duyệt' ? isPheDuyet : !isPheDuyet;const matchThamQuyen = filterThamQuyen === '' ? true : filterThamQuyen === 'UBND tỉnh' ? (item.cqPheDuyet||'').toLowerCase().includes('tỉnh') : ((item.cqPheDuyet||'').toLowerCase().includes('xã') || (item.cqPheDuyet||'').toLowerCase().includes('phường'));const matchCongBo = filterCongBo === '' ? true : filterCongBo === 'Đã công bố' ? (item.congBo||'').toLowerCase().includes('đã') : !(item.congBo||'').toLowerCase().includes('đã');const matchCamMoc = filterCamMoc === '' ? true : filterCamMoc === 'Đã cắm mốc' ? (item.camMoc||'').toLowerCase().includes('đã') : !(item.camMoc||'').toLowerCase().includes('đã');const matchKeHoach = filterKeHoach === '' ? true : filterKeHoach === 'Đã ban hành' ? (item.keHoach||'').toLowerCase().includes('đã') : !(item.keHoach||'').toLowerCase().includes('đã');const matchGuiSXD = filterGuiSXD === '' ? true : filterGuiSXD === 'Đã gửi' ? (item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã') : !(item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã');return matchSearch && matchHuyen && matchTinhTrang && matchThamQuyen && matchCongBo && matchCamMoc && matchKeHoach && matchGuiSXD;});}, [data, searchTerm, filterHuyen, filterTinhTrang, filterThamQuyen, filterCongBo, filterCamMoc, filterKeHoach, filterGuiSXD]);const filteredDetailData = useMemo(() => {return detailData.filter(item => {const matchSearch = (item.xa||'').toLowerCase().includes(detailSearchTerm.toLowerCase()) || (item.tenQh||'').toLowerCase().includes(detailSearchTerm.toLowerCase());const matchHuyen = detailFilterHuyen === '' ? true : item.huyen === detailFilterHuyen;const matchXa = detailFilterXa === '' ? true : item.xa === detailFilterXa;const isPheDuyet = item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật' && item.qdPheDuyet.trim() !== '';const matchTinhTrang = detailFilterTinhTrang === '' ? true : detailFilterTinhTrang === 'Đã phê duyệt' ? isPheDuyet : !isPheDuyet;const matchCongBo = detailFilterCongBo === '' ? true : detailFilterCongBo === 'Đã công bố' ? (item.congBo||'').toLowerCase().includes('đã') : !(item.congBo||'').toLowerCase().includes('đã');const matchCamMoc = detailFilterCamMoc === '' ? true : detailFilterCamMoc === 'Đã cắm mốc' ? (item.camMoc||'').toLowerCase().includes('đã') : !(item.camMoc||'').toLowerCase().includes('đã');const matchGuiSXD = detailFilterGuiSXD === '' ? true : detailFilterGuiSXD === 'Đã gửi' ? (item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã') : !(item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã');return matchSearch && matchHuyen && matchXa && matchTinhTrang && matchCongBo && matchCamMoc && matchGuiSXD;});}, [detailData, detailSearchTerm, detailFilterHuyen, detailFilterXa, detailFilterTinhTrang, detailFilterCongBo, detailFilterCamMoc, detailFilterGuiSXD]);const filteredMergeData = useMemo(() => {return mergedData.filter(item => {return (mergeFilterHuyen === '' || item.huyen === mergeFilterHuyen) && (mergeFilterXa === '' || item.xaMoi === mergeFilterXa);});}, [mergedData, mergeFilterHuyen, mergeFilterXa]);const filteredContactData = useMemo(() => {return contactData.filter(item => {const matchSearch = (item.hoTen||'').toLowerCase().includes(contactSearchTerm.toLowerCase()) || (item.dienThoai||'').includes(contactSearchTerm);return matchSearch && (contactFilterHuyen === '' || (item.donVi||'').includes(contactFilterHuyen));});}, [contactData, contactSearchTerm, contactFilterHuyen]);const filteredReviewData = useMemo(() => {return reviewData.filter(item => {const matchSearch = (item.noiDung || '').toLowerCase().includes(reviewSearchTerm.toLowerCase()) || (item.coQuan || '').toLowerCase().includes(reviewSearchTerm.toLowerCase());return matchSearch && (reviewFilterHuyen === '' || item.huyen === reviewFilterHuyen) && (reviewFilterStatus === '' || item.trangThai === reviewFilterStatus);});}, [reviewData, reviewSearchTerm, reviewFilterHuyen, reviewFilterStatus]);const statsOverview = useMemo(() => {const total = data.length;const approved = data.filter(d => d.qdPheDuyet && d.qdPheDuyet !== 'Đang cập nhật').length;const pending = total - approved;return { total, approved, pending, approvedPercent: total > 0 ? ((approved/total)*100).toFixed(1) : '0.0', pendingPercent: total > 0 ? ((pending/total)*100).toFixed(1) : '0.0' };}, [data]);const detailedStats = useMemo(() => {const result = { 'Bình Định': [], 'Gia Lai': [] }; const grouped = {};OLD_REGIONS.forEach(prov => prov.districts.forEach(dist => grouped[dist.name] = { name: dist.name, tinhCu: prov.province, total: 0, approved: 0, pending: 0 }));detailData.forEach(item => {if (grouped[item.huyen]) {grouped[item.huyen].total++;if (item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật') grouped[item.huyen].approved++; else grouped[item.huyen].pending++;}});Object.values(grouped).forEach(g => { if (result[g.tinhCu] && g.total > 0) result[g.tinhCu].push(g); });return result;}, [detailData]);// FORM HANDLERSconst handleLogin = (e) => {e.preventDefault();if (loginForm.username === 'admin' && loginForm.password === adminPassword) {setIsLoggedIn(true); setShowLoginModal(false); setLoginForm({username:'', password:''}); setLoginError(''); showNotification('Đăng nhập quản trị thành công!');} else setLoginError('Tài khoản hoặc mật khẩu không chính xác!');};const handleChangePassword = (e) => {e.preventDefault();if (changePassForm.current !== adminPassword) return setChangePassError('Mật khẩu hiện tại không đúng!');if (changePassForm.newPass.length < 6) return setChangePassError('Mật khẩu mới phải từ 6 ký tự!');if (changePassForm.newPass !== changePassForm.confirm) return setChangePassError('Mật khẩu xác nhận không khớp!');setAdminPassword(changePassForm.newPass); setShowChangePassModal(false); setChangePassForm({ current: '', newPass: '', confirm: '' }); setChangePassError(''); showNotification('Đổi mật khẩu thành công!');};const openModal = (record = null, isDetail = false) => {if (!isLoggedIn) return;if (record) { setEditingRecord({ ...record, _isDetail: isDetail }); setFormData({...record}); }else { setEditingRecord({ _isDetail: isDetail }); setFormData({ tinhMoi: 'Gia Lai', tinhCu: '', huyen: '', xa: '', tenQh: '', dienTich: '', danSo: '', cqToChuc: '', cqPheDuyet: '', cqThamDinh: '', bcThamDinh: 'Đang cập nhật', yKienSxd: 'Đang cập nhật', qdPheDuyet: 'Đang cập nhật', congBo: 'Chưa công bố', camMoc: 'Chưa cắm mốc', keHoach: 'Đang cập nhật', file: '', mapLink: '', tinhHinhGuiHoSo: 'Chưa gửi', ghiChu: '' }); }setIsModalOpen(true);};const handleSave = (e) => {e.preventDefault();const isDetail = editingRecord?._isDetail;const targetData = isDetail ? detailData : data;const setTargetData = isDetail ? setDetailData : setData;if (editingRecord?.id) {setTargetData(targetData.map(item => item.id === editingRecord.id ? { ...formData } : item));} else {const newId = Date.now();setTargetData([...targetData, { ...formData, id: newId }]);}setIsModalOpen(false); showNotification('Đã lưu hồ sơ thành công!');};const handleDelete = (id, isDetail = false) => {if (!isLoggedIn) return;openConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa hồ sơ này?', () => {if (isDetail) setDetailData(detailData.filter(d => d.id !== id));else setData(data.filter(d => d.id !== id));closeConfirm(); showNotification('Đã xóa hồ sơ thành công.');});};const openMergeModal = (record = null) => {if (!isLoggedIn) return;if (record) { setEditingMergeRecord(record); setMergeFormData({ ...record, cacXaCuStr: Array.isArray(record.cacXaCu) ? record.cacXaCu.join(', ') : record.cacXaCu }); }else { setEditingMergeRecord(null); setMergeFormData({ tinhCu: 'Gia Lai', huyen: '', xaMoi: '', cacXaCuStr: '', canCu: 'Nghị quyết 1664/NQ-UBTVQH15' }); }setIsMergeModalOpen(true);};const handleSaveMerge = (e) => {e.preventDefault();const newRecord = { ...mergeFormData, cacXaCu: mergeFormData.cacXaCuStr ? mergeFormData.cacXaCuStr.split(',').map(s => s.trim()) : [] };delete newRecord.cacXaCuStr;if (editingMergeRecord?.id) setMergedData(mergedData.map(m => m.id === editingMergeRecord.id ? newRecord : m));else setMergedData([...mergedData, { ...newRecord, id: Date.now() }]);setIsMergeModalOpen(false); showNotification('Đã lưu sáp nhập!');};const openContactModal = (record = null) => {if (!isLoggedIn) return;if (record) { setEditingContactRecord(record); setContactFormData({ ...record }); }else { setEditingContactRecord(null); setContactFormData({ donVi: '', hoTen: '', dienThoai: '', chucDanh: '', email: '' }); }setIsContactModalOpen(true);};const handleSaveContact = (e) => {e.preventDefault();if (editingContactRecord?.id) setContactData(contactData.map(c => c.id === editingContactRecord.id ? { ...contactFormData } : c));else setContactData([...contactData, { ...contactFormData, id: Date.now().toString() }]);setIsContactModalOpen(false); showNotification('Đã cập nhật danh bạ liên hệ!');};const openReviewModal = (record = null) => {if (!isLoggedIn) return;if (record) { setEditingReviewRecord(record); setReviewFormData({ ...record }); }else { setEditingReviewRecord(null); setReviewFormData({ tinhCu: 'Gia Lai', huyen: '', noiDung: '', coQuan: '', trangThai: 'Chưa rà soát', file: '', ghiChu: '' }); }setIsReviewModalOpen(true);};const handleSaveReview = (e) => {e.preventDefault();if (editingReviewRecord?.id) setReviewData(reviewData.map(r => r.id === editingReviewRecord.id ? { ...reviewFormData } : r));else setReviewData([...reviewData, { ...reviewFormData, id: Date.now().toString() }]);setIsReviewModalOpen(false); showNotification('Đã lưu dữ liệu rà soát định hướng!');};const handleGenerateSmartReport = () => {if (!reportFile) return showNotification('Vui lòng tải lên file mẫu đề cương báo cáo!');setReportProgress(20); setReportStatus('Đang đọc cấu trúc file văn bản mẫu...');setTimeout(() => { setReportProgress(60); setReportStatus('Đang tổng hợp số liệu thời gian thực từ CSDL quy hoạch...'); }, 1200);setTimeout(() => { setReportProgress(100); setReportStatus('Hoàn tất cấu trúc báo cáo!'); setTimeout(() => setShowGeneratedReport(true), 400); }, 2500);};return (<>{notification && ( {notification})}CSDL QUY HOẠCH GIA LAIHệ thống quản lý quy hoạch & tra cứu sáp nhập ĐVHCSở Xây dựng Gia Lai Bản cập nhật dữ liệu năm 2026{isLoggedIn ? ( Quản trị viên<button onClick={() => setShowDbModal(true)} className="text-xs bg-indigo-600 hover:bg-indigo-700 px-2 py-0.5 rounded text-white font-medium">CSDL<button onClick={() => setShowChangePassModal(true)} className="text-xs bg-amber-600 hover:bg-amber-700 px-2 py-0.5 rounded text-white font-medium">Đổi MK<button onClick={() => setIsLoggedIn(false)} className="text-xs bg-red-600 hover:bg-red-700 px-2 py-0.5 rounded text-white font-medium">Thoát) : (<button onClick={() => setShowLoginModal(true)} className="text-sm bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm flex items-center gap-1.5"> Đăng nhập)}<button onClick={() => setActiveTab('STATS_CHUNG')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'STATS_CHUNG' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-emerald-600'} }> THỐNG KÊ QUY HOẠCH CHUNG<button onClick={() => setActiveTab('STATS_CHITIET')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'STATS_CHITIET' ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-500 hover:text-purple-600'}}> THỐNG KÊ QUY HOẠCH CHI TIẾT<button onClick={() => setActiveTab('MAIN')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'MAIN' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-blue-600'}}> QUY HOẠCH CHUNG<button onClick={() => setActiveTab('REVIEW')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'REVIEW' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-500 hover:text-rose-600'}}> RÀ SOÁT ĐỊNH HƯỚNG HUYỆN CŨ<button onClick={() => setActiveTab('MAIN_CHITIET')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'MAIN_CHITIET' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-indigo-600'}}> QUY HOẠCH CHI TIẾT<button onClick={() => setActiveTab('MERGE')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'MERGE' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-amber-600'}}> TRA CỨU SÁP NHẬP ĐVHC<button onClick={() => setActiveTab('CONTACTS')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'CONTACTS' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-slate-500 hover:text-cyan-600'}}> ĐẦU MỐI LIÊN HỆ ĐỊA PHƯƠNG{/* STATS CHUNG */}{activeTab === 'STATS_CHUNG' && (Tiến độ tổng hợp quy hoạch chung đô thị & nông thôn Gia Lai{isLoggedIn && (<button onClick={() => openReportModal('CHUNG')} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg border border-emerald-200 text-sm hover:bg-emerald-100 shadow-sm"> Báo cáo thông minh)}Tổng số ĐVHC{statsOverview.total}Đã duyệt đồ án{statsOverview.approved}({statsOverview.approvedPercent}%)Đang thẩm định{statsOverview.pending}({statsOverview.pendingPercent}%)
+              cqToChuc: `UBND ${comm.replace('Xã ', 'xã ').replace('P. ', 'phường ')}`,
+              cqPheDuyet: `UBND ${dist.name}`, cqThamDinh: `Phòng Kinh tế / Quản lý Đô thị`,
+              bcThamDinh: isApproved ? `${200 + i}/BC-UBND` : 'Đang cập nhật', yKienSxd: 'Phân cấp địa phương',
+              qdPheDuyet: isApproved ? `${2000 + i}/QĐ-UBND` : 'Đang cập nhật',
+              congBo: isApproved ? 'Đã công bố' : 'Chưa công bố',
+              camMoc: isApproved ? 'Đã cắm mốc' : 'Chưa cắm mốc',
+              keHoach: isApproved ? 'Đã ban hành' : 'Đang cập nhật',
+              file: '', mapLink: '',
+              tinhHinhGuiHoSo: isApproved ? 'Đã gửi' : 'Chưa gửi',
+              ghiChu: 'Cụ thể hóa QHC'
+            });
+        }
+      });
+    });
+  });
+  return data;
+};
+
+export default function App() {
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showDbModal, setShowDbModal] = useState(false);
+  const [showChangePassModal, setShowChangePassModal] = useState(false);
+  
+  // LOGIN & RECOVERY STATE
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState('');
+  const [changePassForm, setChangePassForm] = useState({ current: '', newPass: '', confirm: '' });
+  const [changePassError, setChangePassError] = useState('');
+  const [adminPassword, setAdminPassword] = useState('123456');
+
+  const [showForgotPassModal, setShowForgotPassModal] = useState(false);
+  const [forgotPassStep, setForgotPassStep] = useState(1);
+  const [recoveryPhone, setRecoveryPhone] = useState('');
+  const [recoveryOTP, setRecoveryOTP] = useState('');
+  const [realGeneratedOTP, setRealGeneratedOTP] = useState(''); // Lưu OTP thực do hệ thống sinh ra
+  const [newRecoveryPass, setNewRecoveryPass] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
+  const ADMIN_PHONE = '0385118757';
+  const ADMIN_EMAIL = 'dangvinhtoi@gmail.com';
+
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
+  const [notification, setNotification] = useState('');
+  const [activeTab, setActiveTab] = useState('STATS_CHUNG'); 
+  
+  const [data, setData] = useState([]);
+  const [detailData, setDetailData] = useState([]);
+  const [mergedData, setMergedData] = useState([]);
+  const [contactData, setContactData] = useState([]);
+  const [reviewData, setReviewData] = useState([]);
+  
+  // BỘ LỌC QH CHUNG
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterHuyen, setFilterHuyen] = useState('');
+  const [filterTinhTrang, setFilterTinhTrang] = useState('');
+  const [filterThamQuyen, setFilterThamQuyen] = useState('');
+  const [filterCongBo, setFilterCongBo] = useState('');
+  const [filterCamMoc, setFilterCamMoc] = useState('');
+  const [filterKeHoach, setFilterKeHoach] = useState('');
+  const [filterGuiSXD, setFilterGuiSXD] = useState('');
+
+  // BỘ LỌC QH CHI TIẾT
+  const [detailSearchTerm, setDetailSearchTerm] = useState('');
+  const [detailFilterHuyen, setDetailFilterHuyen] = useState('');
+  const [detailFilterXa, setDetailFilterXa] = useState('');
+  const [detailFilterTinhTrang, setDetailFilterTinhTrang] = useState('');
+  const [detailFilterCongBo, setDetailFilterCongBo] = useState('');
+  const [detailFilterCamMoc, setDetailFilterCamMoc] = useState('');
+  const [detailFilterGuiSXD, setDetailFilterGuiSXD] = useState('');
+  
+  // BỘ LỌC SÁP NHẬP
+  const [mergeFilterHuyen, setMergeFilterHuyen] = useState('');
+  const [mergeFilterXa, setMergeFilterXa] = useState('');
+  
+  // BỘ LỌC LIÊN HỆ
+  const [contactSearchTerm, setContactSearchTerm] = useState('');
+  const [contactFilterHuyen, setContactFilterHuyen] = useState('');
+
+  // BỘ LỌC RÀ SOÁT
+  const [reviewSearchTerm, setReviewSearchTerm] = useState('');
+  const [reviewFilterHuyen, setReviewFilterHuyen] = useState('');
+  const [reviewFilterStatus, setReviewFilterStatus] = useState('');
+
+  // STATE MODALS
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [formData, setFormData] = useState({});
+
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [editingMergeRecord, setEditingMergeRecord] = useState(null);
+  const [mergeFormData, setMergeFormData] = useState({});
+
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [editingContactRecord, setEditingContactRecord] = useState(null);
+  const [contactFormData, setContactFormData] = useState({});
+
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [editingReviewRecord, setEditingReviewRecord] = useState(null);
+  const [reviewFormData, setReviewFormData] = useState({});
+
+  // STATE BÁO CÁO THÔNG MINH
+  const [reportModal, setReportModal] = useState({ isOpen: false, type: 'CHUNG' });
+  const [reportFile, setReportFile] = useState(null);
+  const [reportProgress, setReportProgress] = useState(0);
+  const [reportStatus, setReportStatus] = useState('');
+  const [showGeneratedReport, setShowGeneratedReport] = useState(false);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+      else await signInAnonymously(auth);
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setFirebaseUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const collChung = collection(db, 'artifacts', appId, 'public', 'data', 'qh_chung');
+    const collChiTiet = collection(db, 'artifacts', appId, 'public', 'data', 'qh_chitiet');
+    const collSapNhap = collection(db, 'artifacts', appId, 'public', 'data', 'qh_sapnhap');
+    const collDanhBa = collection(db, 'artifacts', appId, 'public', 'data', 'qh_lienhe');
+    const collRaSoat = collection(db, 'artifacts', appId, 'public', 'data', 'qh_rasoat');
+    const collConfig = collection(db, 'artifacts', appId, 'public', 'data', 'config');
+
+    const unsubConfig = onSnapshot(collConfig, (snapshot) => {
+      let found = false;
+      snapshot.forEach(docSnap => {
+        if (docSnap.id === 'admin') { setAdminPassword(docSnap.data().password || '123456'); found = true; }
+      });
+      if (!found) setAdminPassword('123456');
+    });
+
+    const checkAndInitDB = async () => {
+      try {
+        const sysRef = doc(collConfig, 'system');
+        const sysDoc = await getDoc(sysRef);
+        if (!sysDoc.exists()) {
+          const qhChungSnap = await getDocs(collChung);
+          if (qhChungSnap.empty) {
+            const batch1 = writeBatch(db); generate135Records().forEach(item => batch1.set(doc(collChung, item.id.toString()), item)); await batch1.commit();
+            const batch2 = writeBatch(db); generateDetailRecords().forEach(item => batch2.set(doc(collChiTiet, item.id.toString()), item)); await batch2.commit();
+            const batch3 = writeBatch(db); INITIAL_MERGED_DATA.forEach(item => batch3.set(doc(collSapNhap, item.id.toString()), item)); await batch3.commit();
+            await setDoc(sysRef, { initialized: true });
+          } else await setDoc(sysRef, { initialized: true });
+        }
+      } catch(err) { console.error('Lỗi khi kiểm tra khởi tạo:', err); }
+    };
+    checkAndInitDB();
+
+    const unsubChung = onSnapshot(collChung, (snapshot) => {
+      const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));
+      fetchedData.sort((a, b) => a.id - b.id); setData(fetchedData);
+    });
+    const unsubChiTiet = onSnapshot(collChiTiet, (snapshot) => {
+      const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));
+      fetchedData.sort((a, b) => a.id - b.id); setDetailData(fetchedData);
+    });
+    const unsubSapNhap = onSnapshot(collSapNhap, (snapshot) => {
+      const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));
+      fetchedData.sort((a, b) => a.id - b.id); setMergedData(fetchedData);
+    });
+    const unsubContact = onSnapshot(collDanhBa, (snapshot) => {
+      const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: docSnap.id }));
+      fetchedData.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0)); setContactData(fetchedData);
+    });
+    const unsubRaSoat = onSnapshot(collRaSoat, (snapshot) => {
+      const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: docSnap.id }));
+      fetchedData.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0)); setReviewData(fetchedData);
+    });
+
+    return () => { unsubChung(); unsubChiTiet(); unsubSapNhap(); unsubContact(); unsubRaSoat(); unsubConfig(); };
+  }, [firebaseUser]);
+
+  const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(''), 4000); };
+  const openConfirm = (title, message, onConfirm) => setConfirmDialog({ isOpen: true, title, message, onConfirm });
+  const closeConfirm = () => setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: null });
+
+  const COLUMNS = [
+    { key: 'stt', label: 'STT', width: 'w-12' }, 
+    { key: 'tinhMoi', label: 'Tỉnh mới', width: 'w-24' }, 
+    { key: 'tinhCu', label: 'Tỉnh cũ', width: 'w-24' },
+    { key: 'huyen', label: 'Huyện/Thị xã', width: 'w-36' }, 
+    { key: 'xa', label: 'Xã/Phường', width: 'w-36' },
+    { key: 'tenQh', label: 'Tên quy hoạch', width: 'min-w-[250px] max-w-[350px]' }, 
+    { key: 'dienTich', label: 'Diện tích (ha)', width: 'w-28' }, 
+    { key: 'danSo', label: 'Dân số (2025/2035/2045)', width: 'w-32' },
+    { key: 'cqToChuc', label: 'CQ tổ chức lập', width: 'w-40' }, 
+    { key: 'cqPheDuyet', label: 'CQ phê duyệt', width: 'w-40' }, 
+    { key: 'cqThamDinh', label: 'CQ thẩm định', width: 'w-40' },
+    { key: 'bcThamDinh', label: 'BC thẩm định', width: 'w-36' }, 
+    { key: 'yKienSxd', label: 'Ý kiến Sở XD', width: 'w-36' }, 
+    { key: 'qdPheDuyet', label: 'QĐ phê duyệt', width: 'w-36' },
+    { key: 'congBo', label: 'Công bố', width: 'w-28' }, 
+    { key: 'camMoc', label: 'Cắm mốc', width: 'w-28' }, 
+    { key: 'keHoach', label: 'Kế hoạch TH', width: 'w-36' },
+    { key: 'file', label: 'Đính kèm', width: 'w-24' }, 
+    { key: 'mapLink', label: 'Bản đồ', width: 'w-24' }, 
+    { key: 'tinhHinhGuiHoSo', label: 'Gửi hồ sơ SXD', width: 'w-36' }, 
+    { key: 'ghiChu', label: 'Ghi chú', width: 'min-w-[150px] max-w-[250px]' }
+  ];
+
+  // ==========================================
+  // XUẤT EXCEL, BACKUP VÀ RESTORE DB
+  // ==========================================
+  const handleExportExcel = (exportData, sheetName, isDetail = false) => {
+    if (!exportData || exportData.length === 0) return showNotification('Không có dữ liệu để xuất!');
+    const headers = COLUMNS.map(col => `"${isDetail && col.key === 'danSo' ? 'Dân số' : col.label}"`).join(',');
+    const rows = exportData.map((row, index) => {
+      return COLUMNS.map(col => `"${(col.key === 'stt' ? (index + 1) : (row[col.key] || '')).toString().replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " ")}"`).join(',');
+    });
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+    link.download = `${sheetName}_${new Date().getTime()}.csv`; link.click();
+  };
+
+  const handleExportMergeExcel = () => {
+    if (filteredMergeData.length === 0) return showNotification('Không có dữ liệu để xuất!');
+    const headers = '"STT","Tỉnh cũ","Huyện/Thị xã","Xã/Phường MỚI","Các Xã/Phường CŨ","Căn cứ pháp lý"';
+    const rows = filteredMergeData.map((row, index) => `"${index + 1}","${row.tinhCu || ''}","${row.huyen || ''}","${row.xaMoi || ''}","${Array.isArray(row.cacXaCu) ? row.cacXaCu.join('; ') : (row.cacXaCu||'') }","${row.canCu || ''}"`);
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+    link.download = `DS_SapNhapDVHC_${new Date().getTime()}.csv`; link.click();
+  };
+
+  const handleExportContactExcel = () => {
+    if (filteredContactData.length === 0) return showNotification('Không có dữ liệu để xuất!');
+    const headers = '"STT","Đơn vị","Họ và tên","Điện thoại","Chức danh","Email"';
+    const rows = filteredContactData.map((row, index) => `"${index + 1}","${row.donVi || ''}","${row.hoTen || ''}","${row.dienThoai || ''}","${row.chucDanh || ''}","${row.email || ''}"`);
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+    link.download = `DanhBa_LienHe_${new Date().getTime()}.csv`; link.click();
+  };
+
+  const handleExportReviewExcel = () => {
+    if (filteredReviewData.length === 0) return showNotification('Không có dữ liệu để xuất!');
+    const headers = '"STT","Tỉnh (Cũ)","Huyện/Thị xã (Cũ)","Nội dung định hướng phát triển","Đơn vị phụ trách","Trạng thái rà soát","Ghi chú","Đính kèm"';
+    const rows = filteredReviewData.map((row, index) => `"${index + 1}","${row.tinhCu || ''}","${row.huyen || ''}","${(row.noiDung || '').replace(/"/g, '""')}","${row.coQuan || ''}","${row.trangThai || ''}","${(row.ghiChu || '').replace(/"/g, '""')}","${row.file || ''}"`);
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+    link.download = `RaSoatDinhHuong_${new Date().getTime()}.csv`; link.click();
+  };
+
+  const handleExportDB = () => {
+    const exportObj = { qhChung: data, qhChiTiet: detailData, qhSapNhap: mergedData, qhLienHe: contactData, qhRaSoat: reviewData };
+    const jsonString = JSON.stringify(exportObj);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", url);
+    downloadAnchorNode.setAttribute("download", `QuyHoachGiaLai_Backup_${new Date().getTime()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    URL.revokeObjectURL(url);
+    showNotification('Đã tải xuống bản sao lưu dữ liệu!');
+  };
+
+  const handleImportDB = (e) => {
+    if (!firebaseUser) return showNotification('Lỗi: Cần kết nối mạng và đăng nhập!');
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        let rawData = event.target.result;
+        if (rawData.charCodeAt(0) === 0xFEFF) rawData = rawData.slice(1);
+        if (rawData.indexOf('%7B') === 0 || rawData.indexOf('%7b') === 0) rawData = decodeURIComponent(rawData);
+        const jsonData = JSON.parse(rawData);
+        if (!jsonData || typeof jsonData !== 'object') return showNotification('Lỗi: File dữ liệu không hợp lệ!');
+        
+        openConfirm('Xác nhận phục hồi', 'Hệ thống sẽ XÓA TOÀN BỘ dữ liệu hiện tại và nạp lại bằng file của bạn. Xác nhận?', async () => {
+          closeConfirm(); setShowDbModal(false); showNotification('Đang phục hồi dữ liệu...');
+          try {
+            const clearAndPushData = async (dataArray, collName) => {
+              const collRef = collection(db, 'artifacts', appId, 'public', 'data', collName);
+              const snapshot = await getDocs(collRef);
+              for (let i = 0; i < snapshot.docs.length; i += 400) {
+                const delBatch = writeBatch(db);
+                snapshot.docs.slice(i, i + 400).forEach(d => delBatch.delete(d.ref));
+                await delBatch.commit();
+              }
+              if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) return;
+              for (let i = 0; i < dataArray.length; i += 400) {
+                const addBatch = writeBatch(db);
+                dataArray.slice(i, i + 400).forEach(item => {
+                  if (item && item.id != null) {
+                    const pureItem = JSON.parse(JSON.stringify(item));
+                    addBatch.set(doc(collRef, item.id.toString()), pureItem);
+                  }
+                });
+                await addBatch.commit();
+              }
+            };
+
+            await clearAndPushData(jsonData.qhChung || [], 'qh_chung');
+            await clearAndPushData(jsonData.qhChiTiet || [], 'qh_chitiet');
+            await clearAndPushData(jsonData.qhSapNhap || [], 'qh_sapnhap');
+            await clearAndPushData(jsonData.qhLienHe || [], 'qh_lienhe');
+            await clearAndPushData(jsonData.qhRaSoat || [], 'qh_rasoat');
+
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'system'), { initialized: true });
+            showNotification('Phục hồi dữ liệu thành công!');
+          } catch (err) { showNotification(`Lỗi đồng bộ: ${err.message}`); }
+        });
+      } catch (error) { showNotification(`Lỗi định dạng file: ${error.message}`); }
+    };
+    reader.readAsText(file, "UTF-8");
+    e.target.value = ''; 
+  };
+
+  const handleResetToDefaultDB = () => {
+    if (!firebaseUser) return;
+    openConfirm('Khôi phục CSDL Gốc', 'Hệ thống sẽ XÓA SẠCH dữ liệu hiện tại và nạp lại cấu hình gốc. Có tiếp tục?', async () => {
+      closeConfirm(); setShowDbModal(false); showNotification('Đang tiến hành khôi phục...');
+      try {
+        const resetColl = async (dataArray, collName) => {
+          const collRef = collection(db, 'artifacts', appId, 'public', 'data', collName);
+          const snapshot = await getDocs(collRef);
+          for (let i = 0; i < snapshot.docs.length; i += 400) {
+            const delBatch = writeBatch(db);
+            snapshot.docs.slice(i, i + 400).forEach(d => delBatch.delete(d.ref));
+            await delBatch.commit();
+          }
+          for (let i = 0; i < dataArray.length; i += 400) {
+            const addBatch = writeBatch(db);
+            dataArray.slice(i, i + 400).forEach(item => addBatch.set(doc(collRef, item.id.toString()), item));
+            await addBatch.commit();
+          }
+        }
+        await resetColl(generate135Records(), 'qh_chung');
+        await resetColl(generateDetailRecords(), 'qh_chitiet');
+        await resetColl(INITIAL_MERGED_DATA, 'qh_sapnhap');
+        await resetColl([], 'qh_lienhe');
+        await resetColl([], 'qh_rasoat');
+
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'admin'), { password: '123456' });
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'system'), { initialized: true });
+        setAdminPassword('123456');
+
+        showNotification('Khôi phục CSDL gốc thành công!');
+      } catch(err) { showNotification('Lỗi kết nối CSDL khi đồng bộ!'); }
+    });
+  };
+
+
+  // ==========================================
+  // NHẬP EXCEL (CSV) THÔNG MINH (Tự fill merge cells)
+  // ==========================================
+  const parseCSVLine = (text) => {
+    const rows = []; let current = ''; let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      let char = text[i];
+      if (char === '"' && text[i+1] === '"') { current += '"'; i++; }
+      else if (char === '"') { inQuotes = !inQuotes; }
+      else if (char === '\n' && !inQuotes) { rows.push(current); current = ''; }
+      else { current += char; }
+    }
+    if (current) rows.push(current);
+    return rows;
+  };
+  const parseCSVColumns = (row, separator) => {
+    const cols = []; let current = ''; let inQuotes = false;
+    for (let i = 0; i < row.length; i++) {
+      let char = row[i];
+      if (char === '"' && row[i+1] === '"') { current += '"'; i++; }
+      else if (char === '"') { inQuotes = !inQuotes; }
+      else if (char === separator && !inQuotes) { cols.push(current.trim()); current = ''; }
+      else { current += char; }
+    }
+    cols.push(current.trim());
+    return cols;
+  };
+
+  const handleImportCSV = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        let rawData = event.target.result;
+        if (rawData.charCodeAt(0) === 0xFEFF) rawData = rawData.slice(1);
+        const lines = parseCSVLine(rawData).filter(l => l.trim());
+        if (lines.length < 2) return showNotification('File không có dữ liệu!');
+        
+        let separator = ',';
+        if (lines[0].indexOf(';') > lines[0].indexOf(',')) separator = ';';
+        else if (lines[0].indexOf('\t') > lines[0].indexOf(',')) separator = '\t';
+        
+        const headers = parseCSVColumns(lines[0], separator).map(h => h.toLowerCase().trim().replace(/['"]/g, ''));
+        const recordsToSave = [];
+        let lastDonVi = '';
+        let lastHuyen = '';
+        let lastTinh = '';
+
+        for (let i = 1; i < lines.length; i++) {
+          let cols = parseCSVColumns(lines[i], separator);
+          
+          if (type === 'SAPNHAP' && cols.length > headers.length && headers.length >= 2) {
+             const diff = cols.length - headers.length;
+             const lastCol = cols.pop();
+             const mergedVal = cols.splice(headers.length - 2, diff + 1).join(', ');
+             cols.push(mergedVal);
+             cols.push(lastCol);
+          }
+
+          const rawItem = {};
+          headers.forEach((h, index) => { rawItem[h] = cols[index] ? cols[index].trim() : ''; });
+          
+          const getVal = (keys) => { 
+            for (let k of keys) { 
+              const found = Object.keys(rawItem).find(rk => rk.includes(k)); 
+              if (found && rawItem[found]) return rawItem[found]; 
+            } 
+            return ''; 
+          };
+          
+          if (type === 'CHUNG' || type === 'CHITIET') {
+            const item = {
+              id: parseInt(getVal(['stt','id'])) || (Date.now() + i),
+              tinhMoi: getVal(['tỉnh mới','tỉnh']), tinhCu: getVal(['tỉnh cũ']),
+              huyen: getVal(['huyện','thị xã','thành phố']), xa: getVal(['xã','phường']),
+              tenQh: getVal(['tên quy hoạch','tên qh']), dienTich: getVal(['diện tích']), danSo: getVal(['dân số']),
+              cqToChuc: getVal(['tổ chức','cq tổ chức']), cqPheDuyet: getVal(['cơ quan phê duyệt','cq phê duyệt']),
+              cqThamDinh: getVal(['thẩm định','cq thẩm định']), bcThamDinh: getVal(['báo cáo thẩm định','bc thẩm định']),
+              yKienSxd: getVal(['ý kiến','sxd']), qdPheDuyet: getVal(['quyết định','qđ']),
+              congBo: getVal(['công bố']), camMoc: getVal(['cắm mốc']), keHoach: getVal(['kế hoạch']),
+              file: getVal(['file','đính kèm', 'tài liệu']), mapLink: getVal(['bản đồ','link']),
+              tinhHinhGuiHoSo: getVal(['gửi hồ sơ','sxd']), ghiChu: getVal(['ghi chú'])
+            };
+            if (item.huyen && item.xa) recordsToSave.push(item);
+          } 
+          else if (type === 'LIENHE') {
+            let donVi = getVal(['đơn vị', 'đơn vi', 'huyện', 'xã', 'phường']);
+            if (donVi) lastDonVi = donVi; else donVi = lastDonVi;
+            
+            const hoTen = getVal(['họ và tên', 'họ tên', 'tên']);
+            const dienThoai = getVal(['điện thoại', 'sđt', 'sdt']);
+            const chucDanh = getVal(['chức danh', 'chức vụ']);
+            const email = getVal(['email', 'thư']);
+
+            if (hoTen || dienThoai) {
+              recordsToSave.push({ id: Date.now().toString() + i, donVi, hoTen, dienThoai, chucDanh, email });
+            }
+          }
+          else if (type === 'SAPNHAP') {
+            let tinh = getVal(['tỉnh']);
+            let huyen = getVal(['huyện', 'thị xã', 'thành phố']);
+            if (tinh) lastTinh = tinh; else tinh = lastTinh;
+            if (huyen) lastHuyen = huyen; else huyen = lastHuyen;
+            
+            const xaMoi = getVal(['xã mới', 'phường mới', 'tên xã']);
+            let cacXaCuStr = getVal(['xã cũ', 'phường cũ', 'thị trấn cũ', 'bị sáp nhập']);
+            const canCu = getVal(['căn cứ', 'pháp lý']) || 'Nghị quyết 1664/NQ-UBTVQH15';
+            
+            if (xaMoi) {
+              const cacXaCu = cacXaCuStr ? cacXaCuStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [];
+              recordsToSave.push({ id: Date.now().toString() + i, tinhCu: tinh, huyen, xaMoi, cacXaCu, canCu });
+            }
+          }
+        }
+
+        if (recordsToSave.length === 0) return showNotification('Không tìm thấy dữ liệu hợp lệ trong file CSV!');
+        
+        openConfirm('Xác nhận Nạp dữ liệu', `Hệ thống tìm thấy ${recordsToSave.length} dòng hợp lệ. Dữ liệu cũ trong CSDL sẽ bị XÓA và nạp lại bằng dữ liệu này. Xác nhận?`, async () => {
+          closeConfirm(); setShowDbModal(false); showNotification('Đang ghi dữ liệu...');
+          try {
+            let targetColl = '';
+            if (type === 'CHUNG') targetColl = 'qh_chung';
+            else if (type === 'CHITIET') targetColl = 'qh_chitiet';
+            else if (type === 'LIENHE') targetColl = 'qh_lienhe';
+            else if (type === 'SAPNHAP') targetColl = 'qh_sapnhap';
+            
+            const collRef = collection(db, 'artifacts', appId, 'public', 'data', targetColl);
+            const snapshot = await getDocs(collRef);
+            for (let i = 0; i < snapshot.docs.length; i += 400) {
+              const delBatch = writeBatch(db);
+              snapshot.docs.slice(i, i + 400).forEach(d => delBatch.delete(d.ref));
+              await delBatch.commit();
+            }
+            for (let i = 0; i < recordsToSave.length; i += 400) {
+              const addBatch = writeBatch(db);
+              recordsToSave.slice(i, i + 400).forEach(item => addBatch.set(doc(collRef, item.id.toString()), item));
+              await addBatch.commit();
+            }
+            showNotification(`Đã nạp thành công ${recordsToSave.length} dòng!`);
+          } catch(err) { showNotification('Lỗi khi lưu DB: ' + err.message); }
+        });
+      } catch (error) { showNotification('Lỗi đọc file: ' + error.message); }
+    };
+    reader.readAsText(file, "UTF-8"); e.target.value = ''; 
+  };
+
+  // ==========================================
+  // LỌC DỮ LIỆU CÁC TAB
+  // ==========================================
+  const filteredData = useMemo(() => {
+    return data.filter(item => {
+      const matchSearch = (item.xa||'').toLowerCase().includes(searchTerm.toLowerCase()) || (item.tenQh||'').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchHuyen = filterHuyen === '' ? true : item.huyen === filterHuyen;
+      const isPheDuyet = item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật' && item.qdPheDuyet.trim() !== '';
+      const matchTinhTrang = filterTinhTrang === '' ? true : filterTinhTrang === 'Đã phê duyệt' ? isPheDuyet : !isPheDuyet;
+      const matchThamQuyen = filterThamQuyen === '' ? true : filterThamQuyen === 'UBND tỉnh' ? (item.cqPheDuyet||'').toLowerCase().includes('tỉnh') : ((item.cqPheDuyet||'').toLowerCase().includes('xã') || (item.cqPheDuyet||'').toLowerCase().includes('phường'));
+      
+      const isCongBo = (item.congBo||'').toLowerCase().includes('đã');
+      const matchCongBo = filterCongBo === '' ? true : filterCongBo === 'Đã công bố' ? isCongBo : !isCongBo;
+      
+      const isCamMoc = (item.camMoc||'').toLowerCase().includes('đã');
+      const matchCamMoc = filterCamMoc === '' ? true : filterCamMoc === 'Đã cắm mốc' ? isCamMoc : !isCamMoc;
+
+      const isKeHoach = (item.keHoach||'').toLowerCase().includes('đã');
+      const matchKeHoach = filterKeHoach === '' ? true : filterKeHoach === 'Đã ban hành' ? isKeHoach : !isKeHoach;
+
+      const isGuiSXD = (item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã');
+      const matchGuiSXD = filterGuiSXD === '' ? true : filterGuiSXD === 'Đã gửi' ? isGuiSXD : !isGuiSXD;
+
+      return matchSearch && matchHuyen && matchTinhTrang && matchThamQuyen && matchCongBo && matchCamMoc && matchKeHoach && matchGuiSXD;
+    });
+  }, [data, searchTerm, filterHuyen, filterTinhTrang, filterThamQuyen, filterCongBo, filterCamMoc, filterKeHoach, filterGuiSXD]);
+
+  const filteredDetailData = useMemo(() => {
+    return detailData.filter(item => {
+      const matchSearch = (item.xa||'').toLowerCase().includes(detailSearchTerm.toLowerCase()) || (item.tenQh||'').toLowerCase().includes(detailSearchTerm.toLowerCase());
+      const matchHuyen = detailFilterHuyen === '' ? true : item.huyen === detailFilterHuyen;
+      const matchXa = detailFilterXa === '' ? true : item.xa === detailFilterXa;
+      const isPheDuyet = item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật' && item.qdPheDuyet.trim() !== '';
+      const matchTinhTrang = detailFilterTinhTrang === '' ? true : detailFilterTinhTrang === 'Đã phê duyệt' ? isPheDuyet : !isPheDuyet;
+      
+      const isCongBo = (item.congBo||'').toLowerCase().includes('đã');
+      const matchCongBo = detailFilterCongBo === '' ? true : detailFilterCongBo === 'Đã công bố' ? isCongBo : !isCongBo;
+      
+      const isCamMoc = (item.camMoc||'').toLowerCase().includes('đã');
+      const matchCamMoc = detailFilterCamMoc === '' ? true : detailFilterCamMoc === 'Đã cắm mốc' ? isCamMoc : !isCamMoc;
+
+      const isGuiSXD = (item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã');
+      const matchGuiSXD = detailFilterGuiSXD === '' ? true : detailFilterGuiSXD === 'Đã gửi' ? isGuiSXD : !isGuiSXD;
+
+      return matchSearch && matchHuyen && matchXa && matchTinhTrang && matchCongBo && matchCamMoc && matchGuiSXD;
+    });
+  }, [detailData, detailSearchTerm, detailFilterHuyen, detailFilterXa, detailFilterTinhTrang, detailFilterCongBo, detailFilterCamMoc, detailFilterGuiSXD]);
+
+  const filteredMergeData = useMemo(() => {
+    return mergedData.filter(item => {
+      return (mergeFilterHuyen === '' || item.huyen === mergeFilterHuyen) && (mergeFilterXa === '' || item.xaMoi === mergeFilterXa);
+    });
+  }, [mergedData, mergeFilterHuyen, mergeFilterXa]);
+
+  const filteredContactData = useMemo(() => {
+    return contactData.filter(item => {
+      const matchSearch = (item.hoTen||'').toLowerCase().includes(contactSearchTerm.toLowerCase()) || (item.dienThoai||'').includes(contactSearchTerm) || (item.chucDanh||'').toLowerCase().includes(contactSearchTerm.toLowerCase());
+      const matchHuyen = contactFilterHuyen === '' ? true : (item.donVi||'').includes(contactFilterHuyen);
+      return matchSearch && matchHuyen;
+    });
+  }, [contactData, contactSearchTerm, contactFilterHuyen]);
+
+  const filteredReviewData = useMemo(() => {
+    return reviewData.filter(item => {
+      const matchSearch = (item.noiDung || '').toLowerCase().includes(reviewSearchTerm.toLowerCase()) || (item.coQuan || '').toLowerCase().includes(reviewSearchTerm.toLowerCase());
+      const matchHuyen = reviewFilterHuyen === '' ? true : item.huyen === reviewFilterHuyen;
+      const matchStatus = reviewFilterStatus === '' ? true : item.trangThai === reviewFilterStatus;
+      return matchSearch && matchHuyen && matchStatus;
+    });
+  }, [reviewData, reviewSearchTerm, reviewFilterHuyen, reviewFilterStatus]);
+
+  // THỐNG KÊ (Dynamic theo Data)
+  const statsOverview = useMemo(() => {
+    const total = data.length;
+    const approved = data.filter(d => d.qdPheDuyet && d.qdPheDuyet !== 'Đang cập nhật').length;
+    const pending = total - approved;
+    return { 
+      total, 
+      approved, 
+      pending, 
+      approvedPercent: total > 0 ? ((approved/total)*100).toFixed(1) : '0.0', 
+      pendingPercent: total > 0 ? ((pending/total)*100).toFixed(1) : '0.0' 
+    };
+  }, [data]);
+
+  const detailedStats = useMemo(() => {
+    const result = { 'Bình Định': [], 'Gia Lai': [] }; const grouped = {};
+    OLD_REGIONS.forEach(prov => prov.districts.forEach(dist => grouped[dist.name] = { name: dist.name, tinhCu: prov.province, total: 0, approved: 0, pending: 0 }));
+    detailData.forEach(item => {
+      if (grouped[item.huyen]) {
+        grouped[item.huyen].total++;
+        if (item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật') grouped[item.huyen].approved++; else grouped[item.huyen].pending++;
+      }
+    });
+    Object.values(grouped).forEach(g => { if (result[g.tinhCu] && g.total > 0) result[g.tinhCu].push(g); });
+    return result;
+  }, [detailData]);
+
+  // ==========================================
+  // HANDLERS (MODAL & LƯU DB)
+  // ==========================================
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (loginForm.username === 'admin' && loginForm.password === adminPassword) {
+      setIsLoggedIn(true); setShowLoginModal(false); setLoginForm({username:'', password:''}); setLoginError(''); showNotification('Đăng nhập thành công!');
+    } else setLoginError('Tài khoản hoặc mật khẩu không chính xác!');
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (changePassForm.current !== adminPassword) {
+      setChangePassError('Mật khẩu hiện tại không đúng!');
+      return;
+    }
+    if (changePassForm.newPass.length < 6) {
+      setChangePassError('Mật khẩu mới phải từ 6 ký tự!');
+      return;
+    }
+    if (changePassForm.newPass !== changePassForm.confirm) {
+      setChangePassError('Xác nhận mật khẩu mới không khớp!');
+      return;
+    }
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'admin'), { password: changePassForm.newPass });
+      setAdminPassword(changePassForm.newPass);
+      setShowChangePassModal(false);
+      setChangePassForm({ current: '', newPass: '', confirm: '' });
+      setChangePassError('');
+      showNotification('Đổi mật khẩu thành công!');
+    } catch (error) {
+      setChangePassError('Lỗi: ' + error.message);
+    }
+  };
+
+  const handleSendOTP = (e) => {
+    e.preventDefault();
+    if (recoveryPhone !== ADMIN_PHONE && recoveryPhone !== ADMIN_EMAIL) {
+      setRecoveryError('Số điện thoại hoặc Email không khớp với thông tin đã đăng ký!');
+      return;
+    }
+    setRecoveryError('');
+    
+    const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setRealGeneratedOTP(randomOtp);
+    
+    // NOTE: Giao tiếp API thực tế (Zalo ZNS / SMS / Email SMTP) cần được cấu hình tại đây
+    // Thay vì gửi đi do frontend bị chặn CORS, hệ thống tạm hiển thị mã ra màn hình để người dùng test.
+    showNotification(`Đã xuất lệnh gửi mã OTP đến ${recoveryPhone}. (Mã thực tế: ${randomOtp})`);
+    setForgotPassStep(2);
+  };
+
+  const handleVerifyOTP = (e) => {
+    e.preventDefault();
+    if (recoveryOTP !== realGeneratedOTP) {
+      setRecoveryError('Mã OTP không chính xác!');
+      return;
+    }
+    setRecoveryError('');
+    setForgotPassStep(3);
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (newRecoveryPass.length < 6) {
+      setRecoveryError('Mật khẩu mới phải từ 6 ký tự!');
+      return;
+    }
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'admin'), { password: newRecoveryPass });
+      setAdminPassword(newRecoveryPass);
+      setShowForgotPassModal(false);
+      setForgotPassStep(1);
+      setRecoveryPhone('');
+      setRecoveryOTP('');
+      setNewRecoveryPass('');
+      showNotification('Đã đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.');
+    } catch (error) {
+      setRecoveryError('Lỗi: ' + error.message);
+    }
+  };
+
+  const openModal = (record = null, isDetail = false) => {
+    if (!isLoggedIn) return;
+    if (record) { setEditingRecord({ ...record, _isDetail: isDetail }); setFormData({...record}); } 
+    else {
+      setEditingRecord({ _isDetail: isDetail });
+      setFormData({ tinhMoi: 'Gia Lai', tinhCu: '', huyen: '', xa: '', tenQh: '', dienTich: '', danSo: '', cqToChuc: '', cqPheDuyet: '', cqThamDinh: '', bcThamDinh: 'Đang cập nhật', yKienSxd: 'Đang cập nhật', qdPheDuyet: 'Đang cập nhật', congBo: 'Chưa công bố', camMoc: 'Chưa cắm mốc', keHoach: 'Đang cập nhật', file: '', mapLink: '', tinhHinhGuiHoSo: 'Chưa gửi', ghiChu: '' });
+    }
+    setIsModalOpen(true);
+  };
+  const handleSave = async (e) => {
+    e.preventDefault(); if (!firebaseUser) return;
+    try {
+      const isDetail = editingRecord?._isDetail; const targetColl = isDetail ? 'qh_chitiet' : 'qh_chung';
+      const newRecord = { ...formData }; delete newRecord._isDetail;
+      const recordId = editingRecord?.id ? editingRecord.id.toString() : Date.now().toString();
+      if (!editingRecord?.id) newRecord.id = parseInt(recordId);
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', targetColl, recordId), newRecord);
+      setIsModalOpen(false); showNotification('Đã lưu hồ sơ thành công!');
+    } catch (error) { showNotification('Lỗi khi lưu dữ liệu: ' + error.message); }
+  };
+  const handleDelete = async (id, isDetail = false) => {
+    if (!isLoggedIn) return;
+    openConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa hồ sơ này?', async () => {
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', isDetail ? 'qh_chitiet' : 'qh_chung', id.toString()));
+        closeConfirm(); showNotification('Đã xóa hồ sơ.');
+      } catch(error) { showNotification('Lỗi khi xóa.'); }
+    });
+  };
+
+  const openMergeModal = (record = null) => {
+    if (!isLoggedIn) return;
+    if (record) { setEditingMergeRecord(record); setMergeFormData({ ...record, cacXaCuStr: Array.isArray(record.cacXaCu) ? record.cacXaCu.join(', ') : record.cacXaCu }); } 
+    else { setEditingMergeRecord(null); setMergeFormData({ tinhCu: 'Gia Lai', huyen: '', xaMoi: '', cacXaCuStr: '', canCu: 'Nghị quyết 1664/NQ-UBTVQH15' }); }
+    setIsMergeModalOpen(true);
+  };
+  const handleSaveMerge = async (e) => {
+    e.preventDefault(); if (!firebaseUser) return;
+    try {
+      const newRecord = { ...mergeFormData, cacXaCu: mergeFormData.cacXaCuStr ? mergeFormData.cacXaCuStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [] }; delete newRecord.cacXaCuStr;
+      const recordId = editingMergeRecord?.id ? editingMergeRecord.id.toString() : Date.now().toString();
+      if (!editingMergeRecord?.id) newRecord.id = parseInt(recordId);
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qh_sapnhap', recordId), newRecord);
+      setIsMergeModalOpen(false); showNotification('Đã lưu sáp nhập!');
+    } catch (error) { showNotification('Lỗi khi lưu sáp nhập.'); }
+  };
+  const handleDeleteMerge = async (id) => {
+    if (!isLoggedIn) return;
+    openConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa dữ liệu sáp nhập này?', async () => {
+      try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qh_sapnhap', id.toString())); closeConfirm(); showNotification('Đã xóa sáp nhập.'); } catch (error) { showNotification('Lỗi khi xóa.'); }
+    });
+  };
+
+  const openContactModal = (record = null) => {
+    if (!isLoggedIn) return;
+    if (record) { setEditingContactRecord(record); setContactFormData({ ...record }); } 
+    else { setEditingContactRecord(null); setContactFormData({ donVi: '', hoTen: '', dienThoai: '', chucDanh: '', email: '' }); }
+    setIsContactModalOpen(true);
+  };
+  const handleSaveContact = async (e) => {
+    e.preventDefault(); if (!firebaseUser) return;
+    try {
+      const newRecord = { ...contactFormData };
+      const recordId = editingContactRecord?.id ? editingContactRecord.id.toString() : Date.now().toString();
+      if (!editingContactRecord?.id) newRecord.id = recordId;
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qh_lienhe', recordId), newRecord);
+      setIsContactModalOpen(false); showNotification('Đã lưu danh bạ!');
+    } catch (error) { showNotification('Lỗi khi lưu danh bạ.'); }
+  };
+  const handleDeleteContact = async (id) => {
+    if (!isLoggedIn) return;
+    openConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa liên hệ này?', async () => {
+      try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qh_lienhe', id.toString())); closeConfirm(); showNotification('Đã xóa liên hệ.'); } catch (error) { showNotification('Lỗi khi xóa.'); }
+    });
+  };
+
+  const openReviewModal = (record = null) => {
+    if (!isLoggedIn) return;
+    if (record) { setEditingReviewRecord(record); setReviewFormData({ ...record }); } 
+    else { setEditingReviewRecord(null); setReviewFormData({ tinhCu: 'Gia Lai', huyen: '', noiDung: '', coQuan: '', trangThai: 'Chưa rà soát', file: '', ghiChu: '' }); }
+    setIsReviewModalOpen(true);
+  };
+  const handleSaveReview = async (e) => {
+    e.preventDefault(); if (!firebaseUser) return;
+    try {
+      const newRecord = { ...reviewFormData };
+      const recordId = editingReviewRecord?.id ? editingReviewRecord.id.toString() : Date.now().toString();
+      if (!editingReviewRecord?.id) newRecord.id = recordId;
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qh_rasoat', recordId), newRecord);
+      setIsReviewModalOpen(false); showNotification('Đã lưu rà soát!');
+    } catch (error) { showNotification('Lỗi khi lưu rà soát.'); }
+  };
+  const handleDeleteReview = async (id) => {
+    if (!isLoggedIn) return;
+    openConfirm('Xác nhận xóa', 'Xóa dữ liệu rà soát này?', async () => {
+      try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qh_rasoat', id.toString())); closeConfirm(); showNotification('Đã xóa rà soát.'); } catch (error) { showNotification('Lỗi khi xóa.'); }
+    });
+  };
+
+  const openReportModal = (type) => {
+    setReportModal({ isOpen: true, type });
+    setReportFile(null);
+    setReportProgress(0);
+    setReportStatus('');
+    setShowGeneratedReport(false);
+  };
+
+  const handleGenerateSmartReport = () => {
+    if (!reportFile) return showNotification('Vui lòng tải lên file mẫu hoặc đề cương báo cáo (PDF/DOCX)!');
+    setReportProgress(10); setReportStatus('Đang đọc cấu trúc file báo cáo...');
+    setTimeout(() => { setReportProgress(35); setReportStatus('Đang nhận diện các trường dữ liệu trống trong đề cương...'); }, 1000);
+    setTimeout(() => { setReportProgress(65); setReportStatus('Đang truy xuất CSDL Quy hoạch để tổng hợp số liệu...'); }, 2500);
+    setTimeout(() => { setReportProgress(90); setReportStatus('Đang điền số liệu và định dạng lại văn bản...'); }, 4000);
+    setTimeout(() => { setReportProgress(100); setReportStatus('Hoàn tất!'); setTimeout(() => setShowGeneratedReport(true), 500); }, 5000);
+  };
+
+  return (
+    <>
+      <div className="h-screen w-full bg-slate-100 font-sans text-slate-800 flex flex-col overflow-hidden relative">
+        {notification && (
+          <div className="absolute bottom-4 right-4 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-2 z-[999999] animate-in slide-in-from-bottom-5">
+            <CheckCircle className="w-5 h-5" /> <span className="font-medium text-sm">{notification}</span>
+          </div>
+        )}
+
+        <header className="bg-blue-800 text-white p-4 shadow-md z-40 shrink-0">
+          <div className="container mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-2 rounded-lg"><MapPin className="text-blue-800 h-6 w-6" /></div>
+              <div>
+                <h1 className="text-xl font-bold uppercase tracking-wide">CSDL QUY HOẠCH GIA LAI</h1>
+                <p className="text-blue-200 text-sm">Hệ thống quản lý quy hoạch & tra cứu sáp nhập ĐVHC</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between md:justify-end gap-5 border-t md:border-t-0 border-blue-700 pt-3 md:pt-0">
+              <div className="text-left md:text-right">
+                <p className="text-xs text-blue-200 uppercase tracking-wider font-semibold mb-0.5">Tác giả thực hiện</p>
+                <p className="text-sm font-bold text-white">Phòng Quy hoạch kiến trúc và Phát triển đô thị - Sở Xây dựng Gia Lai</p>
+                <p className="text-xs text-emerald-300 mt-1 flex items-center md:justify-end gap-1 font-medium"><Clock className="h-3.5 w-3.5" /> Giai đoạn cập nhật: Từ 01/7/2025</p>
+              </div>
+              <div className="border-l border-blue-600 pl-5 flex items-center">
+                {isLoggedIn ? (
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span className="text-sm font-bold text-white flex items-center gap-1.5"><User className="w-4 h-4 text-emerald-400"/> Admin</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => setShowDbModal(true)} className="text-xs bg-indigo-500/20 hover:bg-indigo-500 text-indigo-100 hover:text-white border border-indigo-500/50 px-2 py-1 rounded transition-colors flex items-center gap-1 font-medium"><Database className="w-3 h-3"/> Quản lý CSDL</button>
+                      <button onClick={() => setShowChangePassModal(true)} className="text-xs bg-amber-500/20 hover:bg-amber-500 text-amber-100 hover:text-white border border-amber-500/50 px-2 py-1 rounded transition-colors flex items-center gap-1 font-medium"><Key className="w-3 h-3"/> Đổi MK</button>
+                      <button onClick={() => setIsLoggedIn(false)} className="text-xs bg-red-500/20 hover:bg-red-500 text-red-100 hover:text-white border border-red-500/50 px-2 py-1 rounded transition-colors flex items-center gap-1 font-medium"><LogOut className="w-3 h-3"/> Đăng xuất</button>
+                    </div>
+                  </div>
+                ) : (<button onClick={() => setShowLoginModal(true)} className="text-sm bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm flex items-center gap-1.5"><LogIn className="w-4 h-4"/> Đăng nhập</button>)}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="bg-white border-b border-slate-200 px-4 md:px-6 pt-4 flex gap-4 overflow-x-auto custom-scrollbar shrink-0">
+          <button onClick={() => setActiveTab('STATS_CHUNG')} className={`pb-3 px-2 font-bold text-sm md:text-base border-b-4 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'STATS_CHUNG' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-emerald-600'} `}><PieChart className="h-5 w-5" /> THỐNG KÊ QUY HOẠCH CHUNG</button>
+          <button onClick={() => setActiveTab('STATS_CHITIET')} className={`pb-3 px-2 font-bold text-sm md:text-base border-b-4 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'STATS_CHITIET' ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-500 hover:text-purple-600'}`}><BarChart className="h-5 w-5" /> THỐNG KÊ QUY HOẠCH CHI TIẾT</button>
+          <button onClick={() => setActiveTab('MAIN')} className={`pb-3 px-2 font-bold text-sm md:text-base border-b-4 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'MAIN' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-blue-600'}`}><ListFilter className="h-5 w-5" /> BẢNG THEO DÕI QUY HOẠCH CHUNG</button>
+          <button onClick={() => setActiveTab('REVIEW')} className={`pb-3 px-2 font-bold text-sm md:text-base border-b-4 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'REVIEW' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-500 hover:text-rose-600'}`}><ClipboardCheck className="h-5 w-5" /> RÀ SOÁT ĐỊNH HƯỚNG PHÁT TRIỂN CỤM HUYỆN CŨ</button>
+          <button onClick={() => setActiveTab('MAIN_CHITIET')} className={`pb-3 px-2 font-bold text-sm md:text-base border-b-4 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'MAIN_CHITIET' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-indigo-600'}`}><Layout className="h-5 w-5" /> BẢNG THEO DÕI QUY HOẠCH CHI TIẾT</button>
+          <button onClick={() => setActiveTab('MERGE')} className={`pb-3 px-2 font-bold text-sm md:text-base border-b-4 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'MERGE' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-amber-600'}`}><Layers className="h-5 w-5" /> TRA CỨU SÁP NHẬP ĐVHC</button>
+          <button onClick={() => setActiveTab('CONTACTS')} className={`pb-3 px-2 font-bold text-sm md:text-base border-b-4 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'CONTACTS' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-slate-500 hover:text-cyan-600'}`}><User className="h-5 w-5" /> ĐẦU MỐI LIÊN HỆ CÁC XÃ/PHƯỜNG</button>
+        </div>
+
+        <main className="flex-1 p-4 md:p-6 min-h-0 flex flex-col">
+          {/* TAB: THỐNG KÊ CHUNG */}
+          {activeTab === 'STATS_CHUNG' && (
+            <div className="flex flex-col flex-1 min-h-0 gap-6 animate-in fade-in duration-300 overflow-y-auto custom-scrollbar pr-2 pb-6">
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center shrink-0">
+                <div><h2 className="text-xl font-bold text-slate-800 uppercase">Thống kê tiến độ quy hoạch chung ĐT & NT</h2><p className="text-slate-500 text-sm mt-1">Cập nhật theo Kế hoạch 159/KH-UBND</p></div>
+                {isLoggedIn && (<button onClick={() => openReportModal('CHUNG')} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg border border-emerald-200 font-medium text-sm hover:bg-emerald-100 shadow-sm"><FileText className="h-4 w-4" /> Xuất Báo Cáo Thông Minh</button>)}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 border-b-4 border-b-blue-500"><div className="p-4 bg-blue-50 rounded-full text-blue-600"><Layers className="h-8 w-8" /></div><div><p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Tổng số ĐVHC</p><p className="text-3xl font-bold text-slate-800">{statsOverview.total}</p></div></div>
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 border-b-4 border-b-emerald-500"><div className="p-4 bg-emerald-50 rounded-full text-emerald-600"><CheckCircle className="h-8 w-8" /></div><div><p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Đã phê duyệt</p><div className="flex items-baseline gap-2"><p className="text-3xl font-bold text-slate-800">{statsOverview.approved}</p><span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 rounded-full">{statsOverview.approvedPercent}%</span></div></div></div>
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 border-b-4 border-b-amber-500"><div className="p-4 bg-amber-50 rounded-full text-amber-600"><Clock className="h-8 w-8" /></div><div><p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Đang triển khai</p><div className="flex items-baseline gap-2"><p className="text-3xl font-bold text-slate-800">{statsOverview.pending}</p><span className="text-sm font-bold text-amber-600 bg-amber-50 px-2 rounded-full">{statsOverview.pendingPercent}%</span></div></div></div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 shrink-0 mt-2">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center">
+                  <h3 className="font-bold text-slate-700 w-full text-left mb-8 uppercase flex items-center gap-2"><PieChart className="h-5 w-5 text-blue-600" /> Tỷ lệ hoàn thành quy hoạch</h3>
+                  <div className="relative w-56 h-56">
+                    <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                      <path className="text-amber-400" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                      <path className="text-emerald-500" strokeDasharray={`${statsOverview.approvedPercent}, 100`} strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-4xl font-bold text-slate-800">{statsOverview.approvedPercent}%</span>
+                      <span className="text-sm font-medium text-slate-500">Đã phê duyệt</span>
+                    </div>
+                  </div>
+                  <div className="flex w-full justify-center gap-8 mt-10">
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-emerald-500"></span><span className="text-sm font-medium text-slate-700">Đã phê duyệt ({statsOverview.approved})</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-amber-400"></span><span className="text-sm font-medium text-slate-700">Đang triển khai ({statsOverview.pending})</span></div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                  <h3 className="font-bold text-slate-700 w-full text-left mb-6 uppercase flex items-center gap-2"><ListFilter className="h-5 w-5 text-blue-600" /> Chi tiết phân bổ tiến độ</h3>
+                  <div className="space-y-6 flex-1 mt-4">
+                    <div>
+                      <div className="flex justify-between items-center mb-3"><span className="text-base font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-md">Nhóm Đã Phê Duyệt</span><span className="font-bold text-slate-800">{statsOverview.approved} đơn vị</span></div>
+                      <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 rounded-full" style={{ width: `${statsOverview.approvedPercent}%` }}></div></div>
+                    </div>
+                    <div className="mt-8">
+                      <div className="flex justify-between items-center mb-3"><span className="text-base font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-md">Nhóm Đang Triển Khai</span><span className="font-bold text-slate-800">{statsOverview.pending} đơn vị</span></div>
+                      <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div className="h-full bg-amber-400 rounded-full" style={{ width: `${statsOverview.pendingPercent}%` }}></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: THỐNG KÊ CHI TIẾT */}
+          {activeTab === 'STATS_CHITIET' && (
+            <div className="flex flex-col flex-1 min-h-0 gap-6 animate-in fade-in duration-300 overflow-y-auto custom-scrollbar pr-2 pb-6">
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center shrink-0">
+                <div><h2 className="text-xl font-bold text-slate-800 uppercase flex items-center gap-2"><BarChart className="h-6 w-6 text-purple-600" /> Thống kê quy hoạch chi tiết theo Huyện/Thị xã</h2></div>
+                {isLoggedIn && (<button onClick={() => openReportModal('CHITIET')} className="flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-2 rounded-lg border border-purple-200 font-medium text-sm hover:bg-purple-100 shadow-sm"><FileText className="h-4 w-4" /> Xuất Báo Cáo Thông Minh</button>)}
+              </div>
+              {['Bình Định', 'Gia Lai'].map(khuVuc => (
+                <div key={khuVuc} className="mb-4 shrink-0">
+                  <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-purple-500 uppercase">Khu vực Tỉnh {khuVuc} (Cũ)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {detailedStats[khuVuc].map((dist, idx) => {
+                      const percent = Math.round((dist.approved / dist.total) * 100) || 0;
+                      return (
+                        <div key={idx} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div className="flex justify-between items-start mb-4"><h4 className="font-bold text-slate-800">{dist.name}</h4><span className="bg-slate-100 px-2.5 py-1 rounded-full text-xs font-bold">{dist.total} đơn vị</span></div><div className="flex justify-between text-sm font-medium mb-2"><span className="text-emerald-600">Duyệt: {dist.approved}</span><span className="text-amber-600">Đang lập: {dist.pending}</span></div><div className="w-full bg-slate-100 h-2.5 rounded-full"><div className="h-full rounded-full bg-purple-500" style={{ width: `${percent}%` }}></div></div></div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB: BẢNG QH CHUNG */}
+          {activeTab === 'MAIN' && (
+            <div className="flex flex-col flex-1 min-h-0 gap-4 animate-in fade-in duration-300">
+              <div className="bg-white rounded-xl shadow-sm p-4 shrink-0 border border-slate-200">
+                <div className="flex flex-col xl:flex-row justify-between gap-4">
+                  <div className="flex flex-wrap flex-1 gap-3">
+                    <div className="relative w-full md:w-48"><div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-slate-400" /></div><input type="text" className="block w-full pl-9 pr-3 py-2 border rounded-lg text-sm" placeholder="Tìm xã, tên QH..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+                    <select className="w-full md:w-40 py-2 px-3 border rounded-lg text-sm font-medium" value={filterHuyen} onChange={(e) => setFilterHuyen(e.target.value)}><option value="">- Tất cả Huyện -</option>{OLD_REGIONS.flatMap(p => p.districts).map(d => <option key={d.name} value={d.name}>{d.name}</option>)}</select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={filterTinhTrang} onChange={(e) => setFilterTinhTrang(e.target.value)}><option value="">- Tình trạng phê duyệt -</option><option value="Đã phê duyệt">Đã phê duyệt</option><option value="Chưa phê duyệt">Chưa phê duyệt</option></select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={filterThamQuyen} onChange={(e) => setFilterThamQuyen(e.target.value)}><option value="">- Thẩm quyền phê duyệt -</option><option value="UBND tỉnh">UBND tỉnh</option><option value="UBND cấp xã">UBND xã/phường</option></select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={filterCongBo} onChange={(e) => setFilterCongBo(e.target.value)}><option value="">- Tình trạng công bố -</option><option value="Đã công bố">Đã công bố</option><option value="Chưa công bố">Chưa công bố</option></select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={filterCamMoc} onChange={(e) => setFilterCamMoc(e.target.value)}><option value="">- Tình trạng cắm mốc -</option><option value="Đã cắm mốc">Đã cắm mốc</option><option value="Chưa cắm mốc">Chưa cắm mốc</option></select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={filterKeHoach} onChange={(e) => setFilterKeHoach(e.target.value)}><option value="">- Kế hoạch thực hiện -</option><option value="Đã ban hành">Đã ban hành KH</option><option value="Chưa ban hành">Chưa ban hành</option></select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={filterGuiSXD} onChange={(e) => setFilterGuiSXD(e.target.value)}><option value="">- Gửi hồ sơ về SXD -</option><option value="Đã gửi">Đã gửi Sở XD</option><option value="Chưa gửi">Chưa gửi Sở XD</option></select>
+                  </div>
+                  {isLoggedIn && (
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={() => handleExportExcel(filteredData, 'DS_QuyHoachChung', false)} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg border font-medium text-sm hover:bg-emerald-100"><Download className="h-4 w-4" /> Xuất Excel</button>
+                      <button onClick={() => openModal(null, false)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-blue-700"><Plus className="h-4 w-4" /> Thêm hồ sơ</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border flex-1 min-h-0 flex flex-col relative">
+                <div className="p-3 border-b bg-slate-50 flex justify-between items-center"><h2 className="font-bold text-blue-900">DANH SÁCH TIẾN ĐỘ LẬP QUY HOẠCH CHUNG ĐT & NT</h2><span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">Hiển thị: {filteredData.length} / {data.length}</span></div>
+                <div className="overflow-auto flex-1 custom-scrollbar pb-2">
+                  <table className="w-max min-w-full divide-y border-collapse">
+                    <thead className="bg-slate-100 sticky top-0 z-10"><tr>{COLUMNS.map((col) => <th key={col.key} className={`px-3 py-3 text-left text-xs font-bold text-slate-700 uppercase border-x bg-slate-200/90 ${col.width}`}>{col.label}</th>)}{isLoggedIn && <th className="px-3 py-3 text-center text-xs font-bold text-slate-700 uppercase border-x bg-slate-200 sticky right-0 z-20 w-20">Thao tác</th>}</tr></thead>
+                    <tbody className="bg-white divide-y">
+                      {filteredData.map((row, index) => (
+                        <tr key={row.id} className="hover:bg-blue-50/60 group">
+                          <td className="px-3 py-2 text-center text-sm border-x">{index + 1}</td>
+                          {COLUMNS.slice(1).map(col => (
+                            <td key={`${row.id}-${col.key}`} className={`px-3 py-2 text-sm border-x align-middle whitespace-normal break-words ${col.width}`}>
+                              {col.key === 'tenQh' ? (<div className="font-semibold text-blue-900">{row[col.key]}</div>) 
+                              : col.key === 'file' && row[col.key] ? (<a href={row[col.key].startsWith('http') ? row[col.key] : `https://${row[col.key]}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-blue-600 bg-blue-50 px-2 py-1 rounded border hover:bg-blue-100 transition-colors font-medium"><Download className="h-3 w-3 mr-1" /> Tải về</a>)
+                              : col.key === 'mapLink' && row[col.key] ? (<a href={row[col.key].startsWith('http') ? row[col.key] : `https://${row[col.key]}`} target="_blank" rel="noopener noreferrer" className="inline-flex text-emerald-600 bg-emerald-50 px-2 py-1 rounded border hover:bg-emerald-100 font-medium transition-colors"><MapPin className="h-3 w-3 mr-1 mt-0.5" /> Map</a>)
+                              : col.key === 'qdPheDuyet' ? (<div className={row[col.key] && row[col.key] !== 'Đang cập nhật' ? 'font-bold text-emerald-600' : 'text-slate-400 italic'}>{row[col.key]}</div>)
+                              : (<div className={!row[col.key] || row[col.key]==='Đang cập nhật' ? 'text-slate-400 italic' : ''}>{row[col.key] || '---'}</div>)}
+                            </td>
+                          ))}
+                          {isLoggedIn && (
+                            <td className="px-2 py-2 text-center border-x bg-white group-hover:bg-blue-50/60 sticky right-0 z-10 shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                              <div className="flex justify-center gap-1"><button onClick={() => openModal(row, false)} className="p-1.5 text-blue-600 hover:bg-blue-200 rounded"><Edit2 className="h-4 w-4" /></button><button onClick={() => handleDelete(row.id, false)} className="p-1.5 text-red-600 hover:bg-red-200 rounded"><Trash2 className="h-4 w-4" /></button></div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: BẢNG RÀ SOÁT CỤM HUYỆN CŨ */}
+          {activeTab === 'REVIEW' && (
+            <div className="flex flex-col flex-1 min-h-0 gap-4 animate-in fade-in duration-300">
+              <div className="bg-white rounded-xl shadow-sm p-4 border shrink-0">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1"><div className="absolute inset-y-0 left-0 pl-3 flex items-center"><Search className="h-4 w-4 text-slate-400" /></div><input type="text" className="block w-full pl-9 pr-3 py-2 border rounded-lg text-sm" placeholder="Tìm nội dung..." value={reviewSearchTerm} onChange={(e) => setReviewSearchTerm(e.target.value)} /></div>
+                  <select className="w-full md:w-56 py-2 px-3 border rounded-lg text-sm font-medium" value={reviewFilterHuyen} onChange={(e) => setReviewFilterHuyen(e.target.value)}><option value="">- Huyện/Thị xã cũ -</option>{[...new Set(OLD_REGIONS.flatMap(p => p.districts.map(d => d.name)))].map(h => <option key={h} value={h}>{h}</option>)}</select>
+                  <select className="w-full md:w-48 py-2 px-3 border rounded-lg text-sm font-medium" value={reviewFilterStatus} onChange={(e) => setReviewFilterStatus(e.target.value)}><option value="">- Trạng thái rà soát -</option><option value="Đã hoàn thành">Đã hoàn thành</option><option value="Đang rà soát">Đang rà soát</option><option value="Chưa rà soát">Chưa rà soát</option></select>
+                  {isLoggedIn && (
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={handleExportReviewExcel} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg border font-medium text-sm hover:bg-emerald-100"><Download className="h-4 w-4" /> Xuất Excel</button>
+                      <button onClick={() => openReviewModal()} className="flex items-center gap-2 bg-rose-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-rose-700"><Plus className="h-4 w-4" /> Thêm dữ liệu</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border flex-1 min-h-0 flex flex-col">
+                <div className="p-3 border-b bg-rose-50 flex justify-between items-center"><h2 className="font-bold text-rose-900 uppercase">TIẾN ĐỘ RÀ SOÁT ĐỊNH HƯỚNG PT THEO KHU VỰC HUYỆN CŨ</h2><span className="bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full">Hiển thị: {filteredReviewData.length} kết quả</span></div>
+                <div className="overflow-auto flex-1 custom-scrollbar pb-2">
+                  <table className="w-max min-w-full divide-y border-collapse">
+                    <thead className="bg-slate-100 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-3 py-3 text-center text-xs font-bold uppercase border-x w-12 bg-rose-100/90">STT</th><th className="px-3 py-3 text-left text-xs font-bold uppercase border-x w-36 bg-rose-100/90">Huyện/Thị xã cũ</th><th className="px-3 py-3 text-left text-xs font-bold text-rose-800 uppercase border-x min-w-[300px] max-w-[400px] bg-rose-50/90">Nội dung định hướng</th><th className="px-3 py-3 text-left text-xs font-bold uppercase border-x w-48 bg-rose-100/90">Đơn vị phụ trách</th><th className="px-3 py-3 text-center text-xs font-bold uppercase border-x w-36 bg-rose-100/90">Trạng thái</th><th className="px-3 py-3 text-center text-xs font-bold uppercase border-x w-24 bg-rose-100/90">Đính kèm</th><th className="px-3 py-3 text-left text-xs font-bold uppercase border-x min-w-[200px] max-w-[300px] bg-rose-100/90">Ghi chú</th>
+                        {isLoggedIn && <th className="px-3 py-3 text-center text-xs font-bold uppercase border-x bg-rose-200 sticky right-0 z-20 w-24">Thao tác</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y">
+                      {filteredReviewData.map((row, index) => (
+                        <tr key={row.id} className="hover:bg-rose-50/50 group">
+                          <td className="px-3 py-3 text-center text-sm border-x">{index + 1}</td><td className="px-3 py-3 text-sm font-medium border-x">{row.huyen}<br/><span className="text-xs text-slate-400">({row.tinhCu})</span></td><td className="px-3 py-3 text-sm font-semibold border-x whitespace-pre-wrap break-words">{row.noiDung}</td><td className="px-3 py-3 text-sm border-x">{row.coQuan || '---'}</td>
+                          <td className="px-3 py-3 text-center border-x"><span className={`px-2.5 py-1 text-xs font-bold rounded border ${row.trangThai === 'Đã hoàn thành' ? 'bg-emerald-50 text-emerald-700' : row.trangThai === 'Đang rà soát' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{row.trangThai}</span></td>
+                          <td className="px-3 py-3 text-center border-x">{row.file ? <a href={row.file.startsWith('http') ? row.file : `https://${row.file}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-rose-600 bg-rose-50 px-2 py-1 rounded border text-xs hover:bg-rose-100 transition-colors font-medium"><Download className="h-3 w-3 mr-1" /> Tải về</a> : <span className="text-slate-300 italic text-xs">Trống</span>}</td><td className="px-3 py-3 text-sm italic border-x whitespace-normal break-words">{row.ghiChu || '---'}</td>
+                          {isLoggedIn && (<td className="px-2 py-2 text-center border-x bg-white group-hover:bg-rose-50/50 sticky right-0 z-10 shadow-[-4px_0_10px_rgba(0,0,0,0.05)]"><div className="flex justify-center gap-1"><button onClick={() => openReviewModal(row)} className="p-1.5 text-blue-600 hover:bg-blue-200 rounded"><Edit2 className="h-4 w-4" /></button><button onClick={() => handleDeleteReview(row.id)} className="p-1.5 text-red-600 hover:bg-red-200 rounded"><Trash2 className="h-4 w-4" /></button></div></td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: BẢNG QH CHI TIẾT */}
+          {activeTab === 'MAIN_CHITIET' && (
+            <div className="flex flex-col flex-1 min-h-0 gap-4 animate-in fade-in duration-300">
+              <div className="bg-white rounded-xl shadow-sm p-4 shrink-0 border border-slate-200">
+                <div className="flex flex-col xl:flex-row justify-between gap-4">
+                  <div className="flex flex-wrap flex-1 gap-3">
+                    <div className="relative w-full md:w-48"><div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-slate-400" /></div><input type="text" className="block w-full pl-9 pr-3 py-2 border rounded-lg text-sm" placeholder="Tìm xã, tên QHCT..." value={detailSearchTerm} onChange={(e) => setDetailSearchTerm(e.target.value)} /></div>
+                    <select className="w-full md:w-40 py-2 px-3 border rounded-lg text-sm font-medium" value={detailFilterHuyen} onChange={(e) => { setDetailFilterHuyen(e.target.value); setDetailFilterXa(''); }}><option value="">- Tất cả Huyện -</option>{OLD_REGIONS.flatMap(p => p.districts).map(d => <option key={d.name} value={d.name}>{d.name}</option>)}</select>
+                    <select className="w-full md:w-40 py-2 px-3 border rounded-lg text-sm font-medium" value={detailFilterXa} onChange={(e) => setDetailFilterXa(e.target.value)}><option value="">- Tất cả Xã/Phường -</option>{(!detailFilterHuyen ? [...new Set(OLD_REGIONS.flatMap(p=>p.districts).flatMap(d=>d.communes))] : OLD_REGIONS.flatMap(p=>p.districts).find(d=>d.name===detailFilterHuyen)?.communes || []).map(x => <option key={x} value={x}>{x}</option>)}</select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={detailFilterTinhTrang} onChange={(e) => setDetailFilterTinhTrang(e.target.value)}><option value="">- Tình trạng phê duyệt -</option><option value="Đã phê duyệt">Đã phê duyệt</option><option value="Chưa phê duyệt">Chưa phê duyệt</option></select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={detailFilterCongBo} onChange={(e) => setDetailFilterCongBo(e.target.value)}><option value="">- Tình trạng công bố -</option><option value="Đã công bố">Đã công bố</option><option value="Chưa công bố">Chưa công bố</option></select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={detailFilterCamMoc} onChange={(e) => setDetailFilterCamMoc(e.target.value)}><option value="">- Tình trạng cắm mốc -</option><option value="Đã cắm mốc">Đã cắm mốc</option><option value="Chưa cắm mốc">Chưa cắm mốc</option></select>
+                    <select className="w-full md:w-36 py-2 px-3 border rounded-lg text-sm font-medium" value={detailFilterGuiSXD} onChange={(e) => setDetailFilterGuiSXD(e.target.value)}><option value="">- Gửi hồ sơ về SXD -</option><option value="Đã gửi">Đã gửi Sở XD</option><option value="Chưa gửi">Chưa gửi Sở XD</option></select>
+                  </div>
+                  {isLoggedIn && (
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={() => handleExportExcel(filteredDetailData, 'DS_QuyHoachChiTiet', true)} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg border font-medium text-sm hover:bg-emerald-100"><Download className="h-4 w-4" /> Xuất Excel</button>
+                      <button onClick={() => openModal(null, true)} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-indigo-700"><Plus className="h-4 w-4" /> Thêm QH Chi tiết</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border flex-1 min-h-0 flex flex-col relative">
+                <div className="p-3 border-b bg-indigo-50 flex justify-between items-center"><h2 className="font-bold text-indigo-900 uppercase">DANH SÁCH QUY HOẠCH CHI TIẾT CÁC XÃ/PHƯỜNG</h2><span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">Hiển thị: {filteredDetailData.length} / {detailData.length}</span></div>
+                <div className="overflow-auto flex-1 custom-scrollbar pb-2">
+                  <table className="w-max min-w-full divide-y border-collapse">
+                    <thead className="bg-slate-100 sticky top-0 z-10"><tr>{COLUMNS.map((col) => <th key={col.key} className={`px-3 py-3 text-left text-xs font-bold text-slate-700 uppercase border-x bg-indigo-100/90 ${col.width}`}>{col.key === 'danSo' ? 'Dân số' : col.label}</th>)}{isLoggedIn && <th className="px-3 py-3 text-center text-xs font-bold uppercase border-x bg-indigo-100 sticky right-0 z-20 w-20">Thao tác</th>}</tr></thead>
+                    <tbody className="bg-white divide-y">
+                      {filteredDetailData.map((row, index) => (
+                        <tr key={row.id} className="hover:bg-indigo-50/60 group">
+                          <td className="px-3 py-2 text-center text-sm border-x">{index + 1}</td>
+                          {COLUMNS.slice(1).map(col => (
+                            <td key={`${row.id}-${col.key}`} className={`px-3 py-2 text-sm border-x align-middle whitespace-normal break-words ${col.width}`}>
+                              {col.key === 'tenQh' ? (<div className="font-semibold text-indigo-900">{row[col.key]}</div>) 
+                              : col.key === 'file' && row[col.key] ? (<a href={row[col.key].startsWith('http') ? row[col.key] : `https://${row[col.key]}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-indigo-600 bg-indigo-50 px-2 py-1 rounded border hover:bg-indigo-100 font-semibold transition-colors"><Download className="h-3 w-3 mr-1" /> Tải về</a>)
+                              : col.key === 'mapLink' && row[col.key] ? (<a href={row[col.key].startsWith('http') ? row[col.key] : `https://${row[col.key]}`} target="_blank" rel="noopener noreferrer" className="inline-flex text-emerald-600 bg-emerald-50 px-2 py-1 rounded border hover:bg-emerald-100 font-medium transition-colors"><MapPin className="h-3 w-3 mr-1 mt-0.5" /> Map</a>)
+                              : col.key === 'qdPheDuyet' ? (<div className={row[col.key] && row[col.key] !== 'Đang cập nhật' ? 'font-bold text-emerald-600' : 'text-slate-400 italic'}>{row[col.key]}</div>)
+                              : (<div className={!row[col.key] || row[col.key]==='Đang cập nhật' ? 'text-slate-400 italic' : ''}>{row[col.key] || '---'}</div>)}
+                            </td>
+                          ))}
+                          {isLoggedIn && (
+                            <td className="px-2 py-2 text-center border-x bg-white group-hover:bg-indigo-50/60 sticky right-0 z-10 shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                              <div className="flex justify-center gap-1"><button onClick={() => openModal(row, true)} className="p-1.5 text-indigo-600 hover:bg-indigo-200 rounded"><Edit2 className="h-4 w-4" /></button><button onClick={() => handleDelete(row.id, true)} className="p-1.5 text-red-600 hover:bg-red-200 rounded"><Trash2 className="h-4 w-4" /></button></div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: SÁP NHẬP */}
+          {activeTab === 'MERGE' && (
+            <div className="flex flex-col flex-1 min-h-0 gap-4 animate-in fade-in duration-300">
+              <div className="bg-white rounded-xl shadow-sm p-5 border shrink-0">
+                <h3 className="text-slate-800 font-bold mb-3 flex items-center gap-2 uppercase"><Search className="h-5 w-5 text-blue-600" /> Bộ lọc tra cứu ĐVHC cũ theo Xã/Phường mới</h3>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1"><label className="block text-sm font-semibold mb-1">1. Chọn Huyện/Thị xã</label><select className="w-full py-2.5 px-3 border rounded-lg text-sm bg-slate-50 font-medium" value={mergeFilterHuyen} onChange={(e) => { setMergeFilterHuyen(e.target.value); setMergeFilterXa(''); }}><option value="">-- Tất cả Huyện/Thị xã --</option>{[...new Set(mergedData.map(i => i.huyen))].map(h => <option key={h} value={h}>{h}</option>)}</select></div>
+                  <div className="flex-1"><label className="block text-sm font-semibold mb-1">2. Chọn Xã/Phường Mới</label><select className="w-full py-2.5 px-3 border rounded-lg text-sm bg-slate-50 font-medium" value={mergeFilterXa} onChange={(e) => setMergeFilterXa(e.target.value)}><option value="">-- Tất cả Xã/Phường --</option>{(!mergeFilterHuyen ? [...new Set(mergedData.map(i=>i.xaMoi))] : mergedData.filter(i=>i.huyen===mergeFilterHuyen).map(i=>i.xaMoi)).map(x => <option key={x} value={x}>{x}</option>)}</select></div>
+                  {isLoggedIn && (<div className="flex items-end gap-2"><button onClick={handleExportMergeExcel} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 font-medium text-sm transition-colors shadow-sm"><Download className="h-4 w-4" /> Xuất Excel</button><button onClick={() => openMergeModal()} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm"><Plus className="h-4 w-4" /> Thêm dữ liệu</button></div>)}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border flex-1 min-h-0 flex flex-col">
+                <div className="p-4 border-b bg-slate-50 flex justify-between items-center shrink-0"><div><h2 className="text-base font-bold text-slate-800 uppercase">Danh sách chi tiết {mergedData.length} ĐVHC</h2><p className="text-sm text-slate-500 mt-1">Căn cứ Nghị quyết 1664/NQ-UBTVQH15</p></div><span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">Hiển thị: {filteredMergeData.length}</span></div>
+                <div className="overflow-auto flex-1 custom-scrollbar pb-2">
+                  <table className="w-max min-w-full divide-y border-collapse">
+                    <thead className="bg-slate-100 sticky top-0 z-10"><tr><th className="px-4 py-3 text-center text-xs font-bold uppercase border-x w-16 bg-slate-200/90">STT</th><th className="px-4 py-3 text-left text-xs font-bold uppercase border-x w-48 bg-slate-200/90">Huyện/Thị xã</th><th className="px-4 py-3 text-left text-xs font-bold text-emerald-700 uppercase border-x w-64 bg-emerald-50/90">Tên Xã/Phường MỚI</th><th className="px-4 py-3 text-left text-xs font-bold text-amber-700 uppercase border-x bg-amber-50/90">Các Xã/Phường/Thị trấn CŨ (Bị sáp nhập)</th><th className="px-4 py-3 text-left text-xs font-bold uppercase border-x w-64 bg-slate-200/90">Căn cứ pháp lý</th>{isLoggedIn && <th className="px-3 py-3 text-center text-xs font-bold uppercase border-x bg-slate-200 sticky right-0 z-20 w-24">Thao tác</th>}</tr></thead>
+                    <tbody className="bg-white divide-y">
+                      {filteredMergeData.map((row, index) => (
+                        <tr key={row.id} className="hover:bg-slate-50 group">
+                          <td className="px-4 py-4 text-center font-semibold text-slate-500 border-x">{index + 1}</td>
+                          <td className="px-4 py-4 text-sm font-medium border-x whitespace-normal break-words">{row.huyen || '---'}<br/><span className="text-xs text-slate-400 font-normal">({row.tinhCu || '---'} cũ)</span></td>
+                          <td className="px-4 py-4 text-sm font-bold text-emerald-700 border-x bg-emerald-50/30 whitespace-normal break-words">{row.xaMoi}</td>
+                          <td className="px-4 py-4 border-x bg-amber-50/20 whitespace-normal break-words">
+                            <div className="flex flex-wrap gap-2">
+                              {Array.isArray(row.cacXaCu) ? row.cacXaCu.map((x, idx) => <span key={idx} className="px-3 py-1 rounded-full text-sm font-medium bg-white border shadow-sm">{x}</span>) : <span className="px-3 py-1 rounded-full text-sm font-medium bg-white border shadow-sm">{row.cacXaCu || '---'}</span>}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm italic border-x whitespace-normal break-words">{row.canCu}</td>
+                          {isLoggedIn && (<td className="px-2 py-2 text-center border-x bg-white group-hover:bg-slate-50 sticky right-0 z-10 shadow-[-4px_0_10px_rgba(0,0,0,0.05)]"><div className="flex justify-center gap-1"><button onClick={() => openMergeModal(row)} className="p-1.5 text-blue-600 hover:bg-blue-200 rounded"><Edit2 className="h-4 w-4" /></button><button onClick={() => handleDeleteMerge(row.id)} className="p-1.5 text-red-600 hover:bg-red-200 rounded"><Trash2 className="h-4 w-4" /></button></div></td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: ĐẦU MỐI LIÊN HỆ */}
+          {activeTab === 'CONTACTS' && (
+            <div className="flex flex-col flex-1 min-h-0 gap-4 animate-in fade-in duration-300">
+              <div className="bg-white rounded-xl shadow-sm p-4 border shrink-0">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1"><div className="absolute inset-y-0 left-0 pl-3 flex items-center"><Search className="h-4 w-4 text-slate-400" /></div><input type="text" className="block w-full pl-9 pr-3 py-2 border rounded-lg text-sm" placeholder="Tìm tên, SĐT, chức danh..." value={contactSearchTerm} onChange={(e) => setContactSearchTerm(e.target.value)} /></div>
+                  <select className="w-full md:w-64 py-2 px-3 border rounded-lg text-sm font-medium" value={contactFilterHuyen} onChange={(e) => setContactFilterHuyen(e.target.value)}><option value="">- Tất cả Đơn vị/Địa phương -</option>{[...new Set(contactData.map(i => i.donVi))].map(h => <option key={h} value={h}>{h}</option>)}</select>
+                  {isLoggedIn && (
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={handleExportContactExcel} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg border font-medium text-sm hover:bg-emerald-100"><Download className="h-4 w-4" /> Xuất Excel</button>
+                      <button onClick={() => openContactModal()} className="flex items-center gap-2 bg-cyan-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-cyan-700"><Plus className="h-4 w-4" /> Thêm Liên hệ</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border flex-1 min-h-0 flex flex-col">
+                <div className="p-3 border-b bg-cyan-50 flex justify-between items-center"><h2 className="font-bold text-cyan-900 uppercase">DANH BẠ CÁN BỘ ĐẦU MỐI ĐỊA PHƯƠNG</h2><span className="bg-cyan-100 text-cyan-800 text-xs font-bold px-3 py-1 rounded-full">Hiển thị: {filteredContactData.length} liên hệ</span></div>
+                <div className="overflow-auto flex-1 custom-scrollbar pb-2">
+                  <table className="w-full min-w-[800px] divide-y border-collapse">
+                    <thead className="bg-slate-100 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-3 py-3 text-center text-xs font-bold uppercase border-x w-16 bg-cyan-100/90">STT</th><th className="px-3 py-3 text-left text-xs font-bold uppercase border-x w-64 bg-cyan-100/90">Đơn vị (Huyện/Xã)</th><th className="px-3 py-3 text-left text-xs font-bold text-cyan-800 uppercase border-x bg-cyan-50/90">Họ và Tên</th><th className="px-3 py-3 text-center text-xs font-bold uppercase border-x w-40 bg-cyan-100/90">Điện thoại</th><th className="px-3 py-3 text-left text-xs font-bold uppercase border-x w-48 bg-cyan-100/90">Chức danh</th><th className="px-3 py-3 text-left text-xs font-bold uppercase border-x w-48 bg-cyan-100/90">Email</th>
+                        {isLoggedIn && <th className="px-3 py-3 text-center text-xs font-bold uppercase border-x bg-cyan-200 sticky right-0 z-20 w-24">Thao tác</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y">
+                      {filteredContactData.map((row, index) => (
+                        <tr key={row.id} className="hover:bg-cyan-50/50 group">
+                          <td className="px-3 py-3 text-center font-semibold text-slate-500 border-x">{index + 1}</td><td className="px-3 py-3 text-sm font-bold text-slate-700 border-x whitespace-normal break-words">{row.donVi}</td><td className="px-3 py-3 text-sm font-semibold text-cyan-800 border-x whitespace-normal break-words">{row.hoTen}</td><td className="px-3 py-3 text-center text-sm font-bold text-slate-700 border-x">{row.dienThoai ? <a href={`tel:${row.dienThoai}`} className="flex items-center justify-center gap-1 hover:text-blue-600"><Phone className="w-3 h-3"/> {row.dienThoai}</a> : '---'}</td><td className="px-3 py-3 text-sm border-x whitespace-normal break-words">{row.chucDanh || '---'}</td><td className="px-3 py-3 text-sm border-x whitespace-normal break-words">{row.email ? <a href={`mailto:${row.email}`} className="flex items-center gap-1 hover:text-blue-600"><Mail className="w-3 h-3"/> {row.email}</a> : '---'}</td>
+                          {isLoggedIn && (<td className="px-2 py-2 text-center border-x bg-white group-hover:bg-cyan-50/50 sticky right-0 z-10"><div className="flex justify-center gap-1"><button onClick={() => openContactModal(row)} className="p-1.5 text-blue-600 hover:bg-blue-200 rounded"><Edit2 className="h-4 w-4" /></button><button onClick={() => handleDeleteContact(row.id)} className="p-1.5 text-red-600 hover:bg-red-200 rounded"><Trash2 className="h-4 w-4" /></button></div></td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @media print { body * { visibility: hidden; } .print-area, .print-area * { visibility: visible; } .print-area { position: absolute; left: 0; top: 0; width: 100%; } }
+      `}} />
+
+      {/* ALL MODALS (LOGIN, FORGOT PASS, DB MNG) */}
+      {showLoginModal && !showForgotPassModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[99999]"><div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in"><div className="bg-blue-800 p-4 flex justify-between items-center text-white"><h3 className="font-bold flex items-center gap-2"><Lock className="w-5 h-5"/> Đăng nhập</h3><button onClick={() => setShowLoginModal(false)} className="hover:bg-blue-700 p-1 rounded-full"><X className="w-5 h-5"/></button></div><form onSubmit={handleLogin} className="p-6 flex flex-col gap-4">{loginError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm font-medium">{loginError}</div>}<div><label className="block text-sm font-semibold mb-1">Tài khoản</label><input type="text" value={loginForm.username} onChange={e=>setLoginForm(p=>({...p, username: e.target.value}))} className="w-full border px-3 py-2 rounded" placeholder="admin" /></div><div><label className="block text-sm font-semibold mb-1">Mật khẩu</label><input type="password" value={loginForm.password} onChange={e=>setLoginForm(p=>({...p, password: e.target.value}))} className="w-full border px-3 py-2 rounded" placeholder="123456" /></div><button type="submit" className="w-full bg-blue-600 text-white font-bold py-2.5 rounded">Đăng nhập</button><button type="button" onClick={() => {setShowLoginModal(false); setShowForgotPassModal(true); setForgotPassStep(1); setRecoveryPhone(''); setRecoveryOTP(''); setNewRecoveryPass(''); setRecoveryError('');}} className="text-sm text-blue-600 hover:underline mt-2 text-right">Quên mật khẩu?</button></form></div></div>
+      )}
+
+      {/* QUÊN MẬT KHẨU MODAL */}
+      {showForgotPassModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[99999]">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in">
+            <div className="bg-blue-600 p-4 flex justify-between items-center text-white">
+              <h3 className="font-bold flex items-center gap-2"><ShieldCheck className="w-5 h-5"/> Khôi phục tài khoản</h3>
+              <button onClick={() => { setShowForgotPassModal(false); setShowLoginModal(true); }} className="hover:bg-blue-700 p-1 rounded-full"><X className="w-5 h-5"/></button>
+            </div>
+            <div className="p-6 flex flex-col gap-4">
+              {recoveryError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm font-medium">{recoveryError}</div>}
+              
+              {forgotPassStep === 1 && (
+                <form onSubmit={handleSendOTP} className="flex flex-col gap-4">
+                  <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded border">Vui lòng nhập Zalo hoặc Email đăng ký để nhận mã OTP khôi phục.</div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">SĐT Zalo hoặc Email đăng ký</label>
+                    <div className="relative">
+                      <Smartphone className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                      <input type="text" value={recoveryPhone} onChange={e=>setRecoveryPhone(e.target.value)} className="w-full border px-3 py-2 pl-10 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-700" placeholder="VD: 0385118757 hoặc abc@gmail.com" required autoFocus />
+                    </div>
+                  </div>
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded transition-colors shadow-sm">Gửi mã OTP xác thực</button>
+                </form>
+              )}
+
+              {forgotPassStep === 2 && (
+                <form onSubmit={handleVerifyOTP} className="flex flex-col gap-4">
+                  <div className="text-sm text-emerald-700 bg-emerald-50 p-3 rounded border border-emerald-200">Mã xác thực đã được gửi đến: <br/><b>{recoveryPhone}</b>. Vui lòng kiểm tra hộp thư/tin nhắn.</div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Nhập mã OTP (6 số ngẫu nhiên)</label>
+                    <input type="text" value={recoveryOTP} onChange={e=>setRecoveryOTP(e.target.value)} className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 outline-none font-bold text-center tracking-widest text-lg text-slate-800" placeholder="------" maxLength={6} required autoFocus />
+                  </div>
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded transition-colors shadow-sm">Xác nhận mã</button>
+                  <button type="button" onClick={() => setForgotPassStep(1)} className="text-sm text-slate-500 hover:text-blue-600 mt-2 text-center">Đổi số Zalo / Email khác</button>
+                </form>
+              )}
+
+              {forgotPassStep === 3 && (
+                <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
+                  <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded border">Xác thực OTP thành công. Vui lòng thiết lập lại mật khẩu mới cho tài khoản quản trị.</div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Mật khẩu mới</label>
+                    <input type="password" value={newRecoveryPass} onChange={e=>setNewRecoveryPass(e.target.value)} className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nhập mật khẩu mới..." minLength={6} required autoFocus />
+                  </div>
+                  <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded transition-colors shadow-sm">Lưu mật khẩu & Đăng nhập</button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showChangePassModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[99999]"><div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in"><div className="bg-amber-600 p-4 flex justify-between items-center text-white"><h3 className="font-bold flex items-center gap-2"><Key className="w-5 h-5"/> Đổi mật khẩu quản trị</h3><button onClick={() => setShowChangePassModal(false)} className="hover:bg-amber-700 p-1 rounded-full"><X className="w-5 h-5"/></button></div><form onSubmit={handleChangePassword} className="p-6 flex flex-col gap-4">{changePassError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm font-medium">{changePassError}</div>}<div><label className="block text-sm font-semibold mb-1">Mật khẩu hiện tại</label><input type="password" value={changePassForm.current} onChange={e=>setChangePassForm(p=>({...p, current: e.target.value}))} className="w-full border px-3 py-2 rounded" placeholder="Nhập mật khẩu cũ..." required /></div><div><label className="block text-sm font-semibold mb-1">Mật khẩu mới</label><input type="password" value={changePassForm.newPass} onChange={e=>setChangePassForm(p=>({...p, newPass: e.target.value}))} className="w-full border px-3 py-2 rounded" placeholder="Nhập mật khẩu mới..." required /></div><div><label className="block text-sm font-semibold mb-1">Xác nhận mật khẩu mới</label><input type="password" value={changePassForm.confirm} onChange={e=>setChangePassForm(p=>({...p, confirm: e.target.value}))} className="w-full border px-3 py-2 rounded" placeholder="Nhập lại mật khẩu mới..." required /></div><button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded shadow-sm transition-colors mt-2">Lưu thay đổi</button></form></div></div>
+      )}
+
+      {showDbModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[99999]"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in"><div className="bg-indigo-700 p-4 flex justify-between items-center text-white"><h3 className="font-bold flex items-center gap-2"><Database className="w-5 h-5"/> Quản lý Dữ liệu Đám mây</h3><button onClick={() => setShowDbModal(false)} className="hover:bg-indigo-600 p-1 rounded-full"><X className="w-5 h-5"/></button></div><div className="p-6 flex flex-col gap-4">
+          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-2">
+            <h4 className="font-bold text-indigo-900 text-sm mb-2 flex items-center gap-2">Mã phiên bản Server hiện tại:</h4>
+            <code className="text-xs font-mono bg-white px-2 py-1 rounded border border-indigo-200 text-slate-600 break-all select-all block">{appId}</code>
+            <p className="text-xs text-slate-500 mt-2 italic">Mỗi đường link chia sẻ sẽ có một mã Server khác nhau để bảo mật. Hãy dùng chức năng Backup/Restore để chuyển dữ liệu qua lại giữa các đường link.</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button type="button" onClick={handleResetToDefaultDB} className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg shadow-sm transition-colors"><RefreshCcw className="w-5 h-5"/> Khôi phục CSDL Gốc</button>
+            <div className="border-t border-slate-200 my-1"></div>
+            <button onClick={handleExportDB} className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold py-3 rounded-lg shadow-sm transition-colors"><Download className="w-5 h-5 text-blue-600"/> Tải xuống bản sao lưu (.json)</button>
+            <div className="relative">
+              <input type="file" accept=".json" onChange={handleImportDB} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <button type="button" className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-sm transition-colors"><Upload className="w-5 h-5"/> Phục hồi từ file (.json)</button>
+            </div>
+          </div>
+          <div className="border-t border-slate-200 my-1"></div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <h4 className="font-bold text-slate-800 text-sm mb-1">Nạp dữ liệu từ file Excel (.CSV)</h4>
+            <p className="text-xs text-slate-500 mb-3">Hệ thống tự động dò cột tiêu đề để nạp. <b>Lưu ý: Dữ liệu cũ sẽ bị xóa khi nạp.</b></p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative"><input type="file" accept=".csv" onChange={(e)=>handleImportCSV(e,'CHUNG')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /><button className="w-full flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-2 rounded-lg text-xs border border-blue-200"><Upload className="w-3 h-3"/> CSV QH Chung</button></div>
+              <div className="relative"><input type="file" accept=".csv" onChange={(e)=>handleImportCSV(e,'CHITIET')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /><button className="w-full flex items-center justify-center gap-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold py-2 rounded-lg text-xs border border-indigo-200"><Upload className="w-3 h-3"/> CSV QH Chi tiết</button></div>
+              <div className="relative"><input type="file" accept=".csv" onChange={(e)=>handleImportCSV(e,'SAPNHAP')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /><button className="w-full flex items-center justify-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold py-2 rounded-lg text-xs border border-amber-200"><Upload className="w-3 h-3"/> CSV Sáp nhập</button></div>
+              <div className="relative"><input type="file" accept=".csv" onChange={(e)=>handleImportCSV(e,'LIENHE')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /><button className="w-full flex items-center justify-center gap-2 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold py-2 rounded-lg text-xs border border-cyan-200"><Upload className="w-3 h-3"/> CSV Danh bạ</button></div>
+            </div>
+          </div>
+        </div></div></div>
+      )}
+
+      {/* MODAL FORMS: CHUNG & CHI TIET */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-[99999]"><div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col animate-in fade-in zoom-in"><div className={`flex justify-between items-center p-4 border-b rounded-t-xl shrink-0 ${editingRecord?._isDetail ? 'bg-indigo-50' : 'bg-slate-50'}`}><h3 className={`font-bold uppercase ${editingRecord?._isDetail ? 'text-indigo-800' : 'text-slate-800'}`}>{editingRecord?.id ? `Cập nhật: ${editingRecord.xa}` : `Thêm mới ${editingRecord?._isDetail ? 'QH chi tiết' : 'QH chung'}`}</h3><button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 bg-white p-1.5 rounded-full shadow-sm"><X className="h-5 w-5" /></button></div><div className="overflow-y-auto p-4 md:p-6 bg-slate-50/50 flex-1 custom-scrollbar"><form id="qh-form" onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 bg-white p-5 rounded-xl border">
+          <div className="col-span-full pb-1 border-b-2 border-blue-100"><h4 className="text-sm font-bold text-blue-800">I. THÔNG TIN HÀNH CHÍNH</h4></div>
+          <div><label className="block text-xs font-semibold mb-1">Tỉnh mới <span className="text-red-500">*</span></label><input type="text" value={formData.tinhMoi || ''} onChange={(e) => setFormData(prev => ({...prev, tinhMoi: e.target.value}))} className="w-full px-3 py-2 border rounded bg-slate-50 text-sm" required readOnly/></div>
+          <div><label className="block text-xs font-semibold mb-1">Huyện/Thị xã/Thành phố <span className="text-red-500">*</span></label><select value={formData.huyen || ''} onChange={(e) => {let p=''; OLD_REGIONS.forEach(prov=>prov.districts.forEach(d=>{if(d.name===e.target.value) p=prov.province;})); setFormData(prev => ({...prev, huyen: e.target.value, tinhCu: p}));}} className="w-full px-3 py-2 border rounded text-sm" required><option value="" disabled>-- Chọn --</option>{OLD_REGIONS.map(prov => (<optgroup key={prov.province} label={`Tỉnh ${prov.province}`}><>{prov.districts.map(dist => <option key={dist.name} value={dist.name}>{dist.name}</option>)}</></optgroup>))}</select></div>
+          <div><label className="block text-xs font-semibold mb-1">Tỉnh cũ</label><input type="text" value={formData.tinhCu || ''} className="w-full px-3 py-2 border rounded bg-slate-50 text-sm font-semibold" readOnly /></div>
+          <div><label className="block text-xs font-semibold mb-1">Xã/Phường <span className="text-red-500">*</span></label><input type="text" value={formData.xa || ''} onChange={(e) => setFormData(prev => ({...prev, xa: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" required /></div>
+          <div className="col-span-full pb-1 mt-2 border-b-2 border-blue-100"><h4 className="text-sm font-bold text-blue-800">II. THÔNG TIN ĐỒ ÁN</h4></div>
+          <div className="col-span-full xl:col-span-2"><label className="block text-xs font-semibold mb-1">Tên đồ án <span className="text-red-500">*</span></label><input type="text" value={formData.tenQh || ''} onChange={(e) => setFormData(prev => ({...prev, tenQh: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm font-medium" required /></div>
+          <div><label className="block text-xs font-semibold mb-1">Diện tích (ha)</label><input type="text" value={formData.dienTich || ''} onChange={(e) => setFormData(prev => ({...prev, dienTich: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div><label className="block text-xs font-semibold mb-1">{editingRecord?._isDetail ? 'Dân số' : 'Dân số (2025/2035/2045)'}</label><input type="text" value={formData.danSo || ''} onChange={(e) => setFormData(prev => ({...prev, danSo: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div className="col-span-full pb-1 mt-2 border-b-2 border-amber-100"><h4 className="text-sm font-bold text-amber-700">III. TIẾN ĐỘ PHÁP LÝ</h4></div>
+          <div><label className="block text-xs font-semibold mb-1">CQ tổ chức lập</label><input type="text" value={formData.cqToChuc || ''} onChange={(e) => setFormData(prev => ({...prev, cqToChuc: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div><label className="block text-xs font-semibold mb-1">CQ thẩm định</label><input type="text" value={formData.cqThamDinh || ''} onChange={(e) => setFormData(prev => ({...prev, cqThamDinh: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div><label className="block text-xs font-semibold mb-1">Báo cáo thẩm định</label><input type="text" value={formData.bcThamDinh || ''} onChange={(e) => setFormData(prev => ({...prev, bcThamDinh: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div><label className="block text-xs font-semibold mb-1">Ý kiến Sở Xây dựng</label><input type="text" value={formData.yKienSxd || ''} onChange={(e) => setFormData(prev => ({...prev, yKienSxd: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div><label className="block text-xs font-semibold mb-1">CQ phê duyệt</label><input type="text" value={formData.cqPheDuyet || ''} onChange={(e) => setFormData(prev => ({...prev, cqPheDuyet: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm bg-amber-50" /></div>
+          <div className="col-span-1 xl:col-span-3"><label className="block text-xs font-semibold mb-1">QĐ Phê duyệt (Số/Ngày)</label><input type="text" value={formData.qdPheDuyet || ''} onChange={(e) => setFormData(prev => ({...prev, qdPheDuyet: e.target.value}))} className="w-full px-3 py-2 border-emerald-400 rounded text-sm bg-emerald-50 font-bold text-emerald-700" /></div>
+          <div className="col-span-full pb-1 mt-2 border-b-2 border-emerald-100"><h4 className="text-sm font-bold text-emerald-700">IV. THỰC HIỆN & KHÁC</h4></div>
+          <div><label className="block text-xs font-semibold mb-1">Công bố</label><select value={formData.congBo || 'Chưa công bố'} onChange={(e) => setFormData(prev => ({...prev, congBo: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm"><option value="Chưa công bố">Chưa công bố</option><option value="Đã công bố">Đã công bố</option></select></div>
+          <div><label className="block text-xs font-semibold mb-1">Cắm mốc</label><select value={formData.camMoc || 'Chưa cắm mốc'} onChange={(e) => setFormData(prev => ({...prev, camMoc: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm"><option value="Chưa cắm mốc">Chưa cắm mốc</option><option value="Đã cắm mốc">Đã cắm mốc</option></select></div>
+          <div><label className="block text-xs font-semibold mb-1">Kế hoạch thực hiện</label><input type="text" value={formData.keHoach || ''} onChange={(e) => setFormData(prev => ({...prev, keHoach: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div><label className="block text-xs font-semibold mb-1">Link tài liệu (Đính kèm)</label><input type="text" value={formData.file || ''} onChange={(e) => setFormData(prev => ({...prev, file: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" placeholder="Dán link Drive, OneDrive..." /></div>
+          <div><label className="block text-xs font-semibold mb-1">Link Bản đồ</label><input type="text" value={formData.mapLink || ''} onChange={(e) => setFormData(prev => ({...prev, mapLink: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div className="col-span-full xl:col-span-3"><label className="block text-xs font-semibold mb-1">Gửi hồ sơ về SXD</label><select value={formData.tinhHinhGuiHoSo || 'Chưa gửi'} onChange={(e) => setFormData(prev => ({...prev, tinhHinhGuiHoSo: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm"><option value="Chưa gửi">Chưa gửi Sở XD</option><option value="Đã gửi">Đã gửi Sở XD</option></select></div>
+          <div className="col-span-full"><label className="block text-xs font-semibold mb-1">Ghi chú</label><textarea rows="2" value={formData.ghiChu || ''} onChange={(e) => setFormData(prev => ({...prev, ghiChu: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm"></textarea></div>
+        </form></div>
+        <div className="p-4 border-t bg-slate-100 flex justify-end gap-3 rounded-b-xl shrink-0"><button onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-sm bg-white border rounded font-semibold">Hủy bỏ</button><button type="submit" form="qh-form" className={`px-6 py-2 text-sm text-white rounded font-semibold flex items-center gap-2 ${editingRecord?._isDetail ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'}`}><Plus className="h-4 w-4" /> {editingRecord?.id ? 'Lưu' : 'Thêm'}</button></div>
+      </div></div>
+      )}
+
+      {/* MODAL SÁP NHẬP */}
+      {isMergeModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-[99999]">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col animate-in fade-in zoom-in">
+            <div className="flex justify-between items-center p-4 border-b bg-amber-50 rounded-t-xl shrink-0">
+              <h3 className="font-bold text-amber-800 uppercase">{editingMergeRecord ? `Cập nhật sáp nhập` : 'Thêm mới dữ liệu sáp nhập'}</h3>
+              <button onClick={() => setIsMergeModalOpen(false)} className="text-slate-400 hover:text-slate-700 bg-white p-1.5 rounded-full shadow-sm"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="overflow-y-auto p-4 md:p-6 bg-slate-50/50 flex-1 custom-scrollbar">
+              <form id="merge-form" onSubmit={handleSaveMerge} className="grid grid-cols-1 gap-4 bg-white p-5 rounded-xl border shadow-sm">
+                <div><label className="block text-xs font-semibold mb-1">Tỉnh cũ</label><select value={mergeFormData.tinhCu || ''} onChange={(e) => setMergeFormData(prev => ({...prev, tinhCu: e.target.value}))} className="w-full px-3 py-2 border rounded font-medium text-sm"><option value="Bình Định">Bình Định</option><option value="Gia Lai">Gia Lai</option></select></div>
+                <div><label className="block text-xs font-semibold mb-1">Huyện/Thị xã</label><input type="text" value={mergeFormData.huyen || ''} onChange={(e) => setMergeFormData(prev => ({...prev, huyen: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" required placeholder="Vd: Huyện Tuy Phước" /></div>
+                <div><label className="block text-xs font-semibold mb-1">Tên Xã/Phường MỚI</label><input type="text" value={mergeFormData.xaMoi || ''} onChange={(e) => setMergeFormData(prev => ({...prev, xaMoi: e.target.value}))} className="w-full px-3 py-2 border rounded font-bold text-emerald-700 text-sm" required placeholder="Vd: Xã Tuy Phước" /></div>
+                <div><label className="block text-xs font-semibold mb-1">Các Xã/Phường/Thị trấn CŨ (Ngăn cách bằng dấu phẩy)</label><textarea rows="3" value={mergeFormData.cacXaCuStr || ''} onChange={(e) => setMergeFormData(prev => ({...prev, cacXaCuStr: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" placeholder="Vd: Thị trấn Diêu Trì, Thị trấn Tuy Phước..." required /></div>
+                <div><label className="block text-xs font-semibold mb-1">Căn cứ pháp lý</label><input type="text" value={mergeFormData.canCu || ''} onChange={(e) => setMergeFormData(prev => ({...prev, canCu: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" required /></div>
+              </form>
+            </div>
+            <div className="p-4 border-t bg-slate-100 flex justify-end gap-3 rounded-b-xl shrink-0">
+              <button type="button" onClick={() => setIsMergeModalOpen(false)} className="px-5 py-2 text-sm bg-white border rounded font-semibold">Hủy bỏ</button>
+              <button type="submit" form="merge-form" className="px-6 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded font-semibold flex items-center gap-2"><Plus className="h-4 w-4" /> {editingMergeRecord ? 'Lưu' : 'Thêm'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DANH BẠ */}
+      {isContactModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-[99999]"><div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col animate-in fade-in zoom-in"><div className="flex justify-between items-center p-4 border-b bg-cyan-50 rounded-t-xl shrink-0"><h3 className="font-bold text-cyan-800 uppercase">{editingContactRecord ? 'Cập nhật liên hệ' : 'Thêm mới liên hệ'}</h3><button onClick={() => setIsContactModalOpen(false)} className="text-slate-400 hover:text-slate-700 bg-white p-1.5 rounded-full"><X className="h-5 w-5" /></button></div><div className="p-4 md:p-6"><form id="contact-form" onSubmit={handleSaveContact} className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-xl border">
+          <div className="col-span-full"><label className="block text-xs font-semibold mb-1">Đơn vị (Huyện/Xã) <span className="text-red-500">*</span></label><input type="text" value={contactFormData.donVi || ''} onChange={e => setContactFormData(prev => ({...prev, donVi: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" required /></div>
+          <div><label className="block text-xs font-semibold mb-1">Họ và tên <span className="text-red-500">*</span></label><input type="text" value={contactFormData.hoTen || ''} onChange={e => setContactFormData(prev => ({...prev, hoTen: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm font-bold text-cyan-800" required /></div>
+          <div><label className="block text-xs font-semibold mb-1">Điện thoại</label><input type="text" value={contactFormData.dienThoai || ''} onChange={e => setContactFormData(prev => ({...prev, dienThoai: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div><label className="block text-xs font-semibold mb-1">Chức danh</label><input type="text" value={contactFormData.chucDanh || ''} onChange={e => setContactFormData(prev => ({...prev, chucDanh: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+          <div><label className="block text-xs font-semibold mb-1">Email</label><input type="email" value={contactFormData.email || ''} onChange={e => setContactFormData(prev => ({...prev, email: e.target.value}))} className="w-full px-3 py-2 border rounded text-sm" /></div>
+        </form></div><div className="p-4 border-t bg-slate-100 flex justify-end gap-3 rounded-b-xl"><button onClick={() => setIsContactModalOpen(false)} className="px-5 py-2 text-sm bg-white border rounded font-semibold">Hủy bỏ</button><button type="submit" form="contact-form" className="px-6 py-2 text-sm bg-cyan-600 text-white rounded font-semibold"><Plus className="h-4 w-4 inline mr-1" /> {editingContactRecord ? 'Lưu' : 'Thêm'}</button></div></div></div>
+      )}
+
+      {/* MODAL RÀ SOÁT */}
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-[99999]"><div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col animate-in fade-in zoom-in"><div className="flex justify-between items-center p-4 border-b bg-rose-50 rounded-t-xl shrink-0"><h3 className="font-bold text-rose-800 uppercase">{editingReviewRecord ? 'Cập nhật Nội dung Rà soát' : 'Thêm mới Nội dung Rà soát'}</h3><button onClick={() => setIsReviewModalOpen(false)} className="text-slate-400 hover:text-slate-700 bg-white p-1.5 rounded-full shadow-sm"><X className="h-5 w-5" /></button></div><div className="overflow-y-auto p-4 md:p-6 bg-slate-50/50 flex-1 custom-scrollbar"><form id="review-form" onSubmit={handleSaveReview} className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-xl border shadow-sm">
+          <div><label className="block text-xs font-semibold mb-1">Tỉnh cũ</label><select value={reviewFormData.tinhCu || 'Gia Lai'} onChange={e => setReviewFormData(prev => ({...prev, tinhCu: e.target.value}))} className="w-full px-3 py-2 border rounded focus:ring-rose-500 font-medium text-sm"><option value="Bình Định">Bình Định</option><option value="Gia Lai">Gia Lai</option></select></div>
+          <div><label className="block text-xs font-semibold mb-1">Huyện/Thị xã cũ <span className="text-red-500">*</span></label><input type="text" value={reviewFormData.huyen || ''} onChange={e => setReviewFormData(prev => ({...prev, huyen: e.target.value}))} className="w-full px-3 py-2 border rounded focus:ring-rose-500 text-sm" required placeholder="Vd: Huyện Đak Đoa" /></div>
+          <div className="col-span-full"><label className="block text-xs font-semibold mb-1">Nội dung định hướng phát triển <span className="text-red-500">*</span></label><textarea rows="3" value={reviewFormData.noiDung || ''} onChange={e => setReviewFormData(prev => ({...prev, noiDung: e.target.value}))} className="w-full px-3 py-2 border rounded focus:ring-rose-500 text-sm font-semibold text-rose-800" required placeholder="Nhập nội dung rà soát..."></textarea></div>
+          <div><label className="block text-xs font-semibold mb-1">Đơn vị phụ trách</label><input type="text" value={reviewFormData.coQuan || ''} onChange={e => setReviewFormData(prev => ({...prev, coQuan: e.target.value}))} className="w-full px-3 py-2 border rounded focus:ring-rose-500 text-sm" placeholder="Vd: Sở Xây dựng, UBND Huyện..." /></div>
+          <div><label className="block text-xs font-semibold mb-1">Trạng thái rà soát</label><select value={reviewFormData.trangThai || 'Chưa rà soát'} onChange={e => setReviewFormData(prev => ({...prev, trangThai: e.target.value}))} className="w-full px-3 py-2 border rounded focus:ring-rose-500 font-medium text-sm"><option value="Chưa rà soát">Chưa rà soát</option><option value="Đang rà soát">Đang rà soát</option><option value="Đã hoàn thành">Đã hoàn thành</option></select></div>
+          <div><label className="block text-xs font-semibold mb-1">Link tài liệu (Đính kèm)</label><input type="text" value={reviewFormData.file || ''} onChange={e => setReviewFormData(prev => ({...prev, file: e.target.value}))} className="w-full px-3 py-2 border rounded focus:ring-rose-500 text-sm" placeholder="Dán link Drive, OneDrive..." /></div>
+          <div className="col-span-full"><label className="block text-xs font-semibold mb-1">Ghi chú</label><textarea rows="2" value={reviewFormData.ghiChu || ''} onChange={e => setReviewFormData(prev => ({...prev, ghiChu: e.target.value}))} className="w-full px-3 py-2 border rounded focus:ring-rose-500 text-sm"></textarea></div>
+        </form></div><div className="p-4 border-t bg-slate-100 flex justify-end gap-3 rounded-b-xl shrink-0"><button type="button" onClick={() => setIsReviewModalOpen(false)} className="px-5 py-2 text-sm bg-white border rounded font-semibold">Hủy bỏ</button><button type="submit" form="review-form" className="px-6 py-2 text-sm bg-rose-600 text-white rounded font-semibold flex items-center gap-2"><Plus className="h-4 w-4" /> {editingReviewRecord ? 'Lưu' : 'Thêm'}</button></div></div></div>
+      )}
+
+      {/* BÁO CÁO THÔNG MINH MODAL & PREVIEW */}
+      {reportModal.isOpen && !showGeneratedReport && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-[99999]"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in"><div className={`p-4 flex justify-between items-center text-white ${reportModal.type === 'CHUNG' ? 'bg-emerald-600' : 'bg-purple-600'}`}><h3 className="font-bold flex items-center gap-2"><FileText className="w-5 h-5"/> Báo cáo tự động</h3><button onClick={() => setReportModal({isOpen:false,type:''})} className="hover:bg-black/20 p-1.5 rounded-full"><X className="w-5 h-5"/></button></div><div className="p-6"><div className="mb-6 bg-slate-50 p-4 rounded-lg border text-sm text-slate-600"><p>Hệ thống tự động điền số liệu vào <b>File đề cương mẫu (PDF/DOCX)</b> của bạn.</p></div><div className="flex flex-col gap-2 mb-6"><label className="text-sm font-bold text-slate-700">Tải đề cương (PDF/DOCX)</label><div className="border-2 border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-50 cursor-pointer relative"><input type="file" accept=".pdf,.doc,.docx" className="absolute inset-0 w-full h-full opacity-0 z-10" onChange={(e) => setReportFile(e.target.files[0])} /><Upload className="w-10 h-10 text-slate-400 mb-3" />{reportFile ? (<div className="text-center"><p className="text-sm font-bold text-blue-600">{reportFile.name}</p></div>) : (<div className="text-center"><p className="text-sm font-bold text-slate-600">Kéo thả hoặc nhấn chọn file</p></div>)}</div></div>
+        {reportProgress > 0 && (<div className="mb-4"><div className="flex justify-between text-xs font-bold text-slate-600 mb-1"><span>{reportStatus}</span><span>{reportProgress}%</span></div><div className="w-full bg-slate-200 rounded-full h-2.5"><div className={`h-2.5 rounded-full ${reportModal.type === 'CHUNG' ? 'bg-emerald-500' : 'bg-purple-500'}`} style={{ width: `${reportProgress}%` }}></div></div></div>)}
+        <button onClick={handleGenerateSmartReport} disabled={reportProgress>0 && reportProgress<100} className={`w-full py-3 rounded-lg text-white font-bold flex items-center justify-center gap-2 ${reportProgress>0 && reportProgress<100 ? 'bg-slate-400 cursor-not-allowed' : (reportModal.type==='CHUNG'?'bg-emerald-600':'bg-purple-600')}`}>{reportProgress>0&&reportProgress<100 ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <ClipboardCheck className="w-5 h-5" />}{reportProgress===0 ? 'Tạo báo cáo' : 'Đang xử lý...'}</button></div></div></div>
+      )}
+
+      {showGeneratedReport && (
+        <div className="fixed inset-0 bg-slate-200 flex flex-col z-[99999]"><div className="bg-white px-6 py-3 border-b shadow-sm flex justify-between items-center shrink-0"><h2 className="font-bold">Bản xem trước Báo cáo</h2><div className="flex gap-3"><button onClick={() => { setShowGeneratedReport(false); setReportModal({isOpen:false,type:''}); }} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm">Đóng</button><button onClick={() => window.print()} className={`px-4 py-2 text-white font-semibold rounded-lg text-sm flex items-center gap-2 ${reportModal.type==='CHUNG'?'bg-emerald-600':'bg-purple-600'}`}><Download className="w-4 h-4" /> In PDF</button></div></div><div className="flex-1 overflow-auto p-4 flex justify-center custom-scrollbar print-area"><div className="bg-white w-full max-w-[210mm] min-h-[297mm] shadow-lg p-[20mm] text-slate-900 font-serif text-[14pt] leading-[1.5]"><div className="flex justify-between items-start mb-8 text-center font-bold"><div className="w-[40%]"><p className="text-[13pt] uppercase">SỞ XÂY DỰNG GIA LAI</p><p className="text-[12pt] font-semibold border-b border-black inline-block pb-0.5">PHÒNG QUY HOẠCH KIẾN TRÚC</p></div><div className="w-[60%]"><p className="text-[13pt]">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p><p className="text-[13pt] border-b border-black inline-block pb-0.5">Độc lập - Tự do - Hạnh phúc</p></div></div><div className="text-center mb-10"><p className="text-[16pt] font-bold">BÁO CÁO TIẾN ĐỘ</p><p className="text-[14pt] font-bold uppercase">{reportModal.type === 'CHUNG' ? 'Lập Quy hoạch chung' : 'Phê duyệt Quy hoạch chi tiết 1/500'}</p><p className="italic text-[13pt] mt-1">(Cập nhật đến ngày {new Date().toLocaleDateString('vi-VN')})</p></div><div className="text-justify space-y-4"><p>Báo cáo tiến độ triển khai trên địa bàn:</p><p className="font-bold">1. Tổng quan:</p><ul className="list-disc pl-8 space-y-2"><li>Tổng số đang theo dõi: <b>{reportModal.type === 'CHUNG' ? statsOverview.total : detailedStats['Gia Lai']?.reduce((acc, curr) => acc + curr.total, 0) || 0}</b> đơn vị.</li><li>Số lượng đã phê duyệt: <b>{reportModal.type === 'CHUNG' ? statsOverview.approved : detailedStats['Gia Lai']?.reduce((acc, curr) => acc + curr.approved, 0) || 0}</b> đơn vị.</li><li>Tỷ lệ hoàn thành: <b>{reportModal.type === 'CHUNG' ? statsOverview.approvedPercent : (((detailedStats['Gia Lai']?.reduce((acc, curr) => acc + curr.approved, 0) || 0) / (detailedStats['Gia Lai']?.reduce((acc, curr) => acc + curr.total, 0) || 1)) * 100).toFixed(1)}%</b>.</li></ul><p className="font-bold mt-6">2. Kế hoạch tiếp theo:</p><p>Đẩy nhanh tiến độ thẩm định, phê duyệt đối với hồ sơ còn tồn đọng.</p></div></div></div></div>
+      )}
+      
+      {/* DIALOG XÁC NHẬN CHUNG */}
+      {confirmDialog.isOpen && (<div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[999999]"><div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center"><div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle className="w-8 h-8" /></div><h3 className="font-bold text-slate-800 mb-2">{confirmDialog.title}</h3><p className="text-slate-600 text-sm mb-6">{confirmDialog.message}</p><div className="flex gap-3 justify-center"><button onClick={closeConfirm} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg">Hủy</button><button onClick={confirmDialog.onConfirm} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">Xác nhận</button></div></div></div>)}
+    </>
+  );
+}
