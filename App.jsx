@@ -1,21 +1,21 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, FileText, Download, Upload, X, Layers, ListFilter, MapPin, PieChart, CheckCircle, Clock, BarChart, Layout, User, LogIn, LogOut, Lock, AlertTriangle, Database, RefreshCcw, Key, Phone, Mail, ClipboardCheck, Smartphone, ShieldCheck } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch, getDocs, getDoc } from 'firebase/firestore';
 
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-  apiKey: "mock-api-key",
-  authDomain: "mock-project.firebaseapp.com",
-  projectId: "mock-project",
-  storageBucket: "mock-project.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000000000"
+// Khởi tạo cấu hình an toàn cho Firebase
+const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config ? JSON.parse(__firebase_config) : {
+  apiKey: "mock-api-key", authDomain: "://firebaseapp.com", projectId: "mock-id", storageBucket: "://appspot.com", messagingSenderId: "000000", appId: "1:000:web:000"
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+// ==========================================
+// DỮ LIỆU HÀNH CHÍNH & SÁP NHẬP
+// ==========================================
 const OLD_REGIONS = [
   {
     province: 'Bình Định',
@@ -41,8 +41,8 @@ const OLD_REGIONS = [
       { name: 'Thị xã Ayun Pa', communes: ['Xã Ia Rbol', 'P. Ayun Pa'] },
       { name: 'Huyện Đức Cơ', communes: ['Xã Ia Dơk', 'Xã Ia Krêl', 'Xã Ia Nan', 'Xã Ia Dom', 'Xã Ia Pnôn'] },
       { name: 'Huyện Chư Păh', communes: ['Xã Chư Păh', 'Xã Ia Khươl', 'Xã Ia Phí', 'Xã Nghĩa Hòa', 'Xã Hòa Hội'] },
-      { name: 'Huyện Kbang', communes: ['Xã Kbang', 'Xã Krong', 'Xã Kông Bơ La', 'Xã Tơ Tung', 'Xã Sơn Lang'] },
-      { name: 'Huyện Kông Chro', communes: ['Xã Kông Chro', 'Xã Đăk Song', 'Xã Chơ Long', 'Xã Ya Ma', 'Xã Chư Krey', 'Xã SRó'] },
+      { name: 'Huyện Kbang', communes: ['Xã Kbang', 'Xã Krong', 'Xã Kông Bơ La', 'Xã Tơ Tung', 'Xã Sơn Lang', 'Xã Đông', 'Xã Nghĩa An', 'Xã Đăk Hlơ', 'Xã Ya Hội'] },
+      { name: 'Huyện Kông Chro', communes: ['Xã Kông Chro', 'Xã Đăk Song', 'Xã Chơ Long', 'Xã Ya Ma', 'Xã Chư Krey', 'Xã SRó', 'Xã Đak Rong'] },
       { name: 'Huyện Đak Đoa', communes: ['Xã Đak Đoa', 'Xã Đak Sơmei', 'Xã Kdang', 'Xã Ia Băng'] },
       { name: 'Huyện Chư Sê', communes: ['Xã Chư Sê', 'Xã Al Bá', 'Xã Bờ Ngoong'] },
       { name: 'Huyện Mang Yang', communes: ['Xã Mang Yang', 'Xã Lơ Pang', 'Xã Kon Chiêng', 'Xã Hra', 'Xã Ayun'] },
@@ -50,248 +50,105 @@ const OLD_REGIONS = [
       { name: 'Huyện Chư Pưh', communes: ['Xã Chư Pưh', 'Xã Ia Hrú', 'Xã Ia Le', 'Xã Ia Dreh'] },
       { name: 'Huyện Phú Thiện', communes: ['Xã Phú Thiện', 'Xã Ia Ake', 'Xã Chư A Thai'] },
       { name: 'Huyện Ia Pa', communes: ['Xã Ia Pa', 'Xã Pờ Tó'] },
-      { name: 'Huyện Krông Pa', communes: ['Xã Phú Túc', 'Xã Ia Rsai', 'Xã Uar', 'Xã Ia Hiao'] },
-      { name: 'Huyện Đak Pơ', communes: ['Xã Đak Pơ', 'Xã Cư An'] },
+      { name: 'Huyện Krông Pa', communes: ['Xã Phú Túc', 'Xã Ia Rsai', 'Xã Uar', 'Xã Ia Hiao', 'Xã Chư Rcăm'] },
+      { name: 'Huyện Đak Pơ', communes: ['Xã Đak Pơ', 'Xã Cư An', 'Xã Hội Sơn'] },
       { name: 'Huyện Ia Grai', communes: ['Xã Ia Grai', 'Xã Ia Krái', 'Xã Ia Hrung', 'Xã Ia Chia', 'Xã Ia O'] },
     ]
   }
 ];
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('chung');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [districtFilter, setDistrictFilter] = useState('');
+const generateMergedData = () => {
+  const specificMerges = {
+    'P. Quy Nhơn': ['Phường Hải Cảng', 'Phường Thị Nại', 'Phường Trần Phú', 'Phường Đống Đa'],
+    'P. Quy Nhơn Đông': ['Xã Nhơn Hội', 'Xã Nhơn Lý', 'Xã Nhơn Hải', 'Phường Nhơn Bình'],
+    'P. Quy Nhơn Tây': ['Phường Bùi Thị Xuân', 'Xã Phước Mỹ'],
+    'P. Quy Nhơn Nam': ['Phường Ngô Mây', 'Phường Nguyễn Văn Cừ', 'Phường Quang Trung', 'Phường Ghềnh Ráng'],
+    'P. Quy Nhơn Bắc': ['Phường Trần Quang Diệu', 'Phường Nhơn Phú'],
+    'Xã Tuy Phước': ['Thị trấn Diêu Trì', 'Thị trấn Tuy Phước', 'Xã Phước Nghĩa', 'Xã Phước Lộc', 'Xã Phước Thuận'],
+    'P. Hoài Nhơn Đông': ['Phường Hoài Hương', 'Phường Hoài Xuân', 'Xã Hoài Mỹ'],
+    'P. Hoài Nhơn Tây': ['Phường Hoài Tân', 'Phường Hoài Đức'],
+    'P. Hoài Nhơn Bắc': ['Phường Hoài Thanh Tây', 'Xã Hoài Châu', 'Xã Hoài Châu Bắc'],
+    'P. Hoài Nhơn Nam': ['Xã Hoài Sơn', 'Xã Hoài Phú'],
+    'P. Hoài Nhơn': ['Phường Hoài Thanh', 'Các khu vực sáp nhập liền kề'],
+    'Xã Phù Mỹ': ['Thị trấn Phù Mỹ', 'Xã Mỹ Lộc', 'Xã Mỹ Hòa', 'Xã Mỹ Trinh'],
+    'Xã Phù Cát': ['Thị trấn Ngô Mây', 'Xã Cát Trinh', 'Xã Cát Tân'],
+    'Xã Tây Sơn': ['Thị trấn Phú Phong', 'Xã Bình Nghi'],
+    'Xã Lơ Pang': ['Xã Lơ Pang (cũ)', 'Xã Kon Thụp', 'Xã Đê Ar'],
+    'Xã Kon Chiêng': ['Xã Kon Chiêng (cũ)', 'Xã Đăk Trôi'],
+    'Xã Hra': ['Xã Hra (cũ)', 'Xã Đak Ta Ley'],
+    'Xã Ayun': ['Xã Ayun (cũ)', 'Xã Đăk Jơ Ta'],
+    'Xã Mang Yang': ['Thị trấn Kon Dơng', 'Xã Đak Yă', 'Xã Đăk Drăng', 'Xã Hải Yang'],
+    'Xã Ia Grai': ['Thị trấn Ia Kha', 'Xã Ia Grăng', 'Xã Ia Bă'],
+    'Xã Ia Krái': ['Xã Ia Tô', 'Xã Ia Krái (cũ)', 'Xã Ia Khai'],
+    'Xã Ia Hrung': ['Xã Ia Sao', 'Xã Ia Yok', 'Xã Ia Hrung (cũ)', 'Xã Ia Dêr'],
+    'P. An Khê': ['Phường An Phú', 'Phường An Tân', 'Xã Tú An'],
+    'Xã Chư Păh': ['Thị trấn Phú Hòa', 'Xã Nghĩa Hưng'],
+    'Xã Đak Đoa': ['Thị trấn Đak Đoa', 'Xã Hneng']
+  };
 
-  const initialRecords = useMemo(() => {
-    const list = [];
-    let idCounter = 1;
-    OLD_REGIONS.forEach(prov => {
-      prov.districts.forEach(dist => {
-        dist.communes.forEach(comm => {
-          if (idCounter <= 135) {
-            const approved = idCounter % 3 !== 0;
-            list.push({
-              id: idCounter,
-              tinhMoi: 'Gia Lai',
-              tinhCu: prov.province,
-              huyen: dist.name,
-              xa: comm,
-              tenQh: `Quy hoạch chung xây dựng ${comm}, Huyện ${dist.name}, Tỉnh Gia Lai`,
-              dienTich: (1200 + (idCounter * 35)).toFixed(1),
-              danSo: (4500 + (idCounter * 125)).toLocaleString(),
-              cqToChuc: `Sở Xây dựng Tỉnh Gia Lai`,
-              cqPheDuyet: approved ? 'UBND Tỉnh Gia Lai' : 'Sở Xây dựng Tỉnh Gia Lai',
-              qdPheDuyet: approved ? `${100 + idCounter}/QĐ-UBND` : 'Đang triển khai / Đang lấy ý kiến',
-              status: approved ? 'approved' : 'pending'
-            });
-            idCounter++;
-          }
+  const mergedData = [];
+  let idCounter = 1;
+  OLD_REGIONS.forEach(prov => {
+    prov.districts.forEach(dist => {
+      dist.communes.forEach(comm => {
+        const oldList = specificMerges[comm] ? specificMerges[comm] : [`${comm} (Nguyên trạng/Cũ)`];
+        mergedData.push({ id: idCounter++, tinhCu: prov.province, huyen: dist.name, xaMoi: comm, cacXaCu: oldList, canCu: 'Nghị quyết 1664/NQ-UBTVQH15' });
+      });
+    });
+  });
+
+  mergedData.push({ id: idCounter++, tinhCu: 'Gia Lai', huyen: 'Huyện Đức Cơ', xaMoi: 'Xã Đức Cơ', cacXaCu: ['Thị trấn Chư Ty', 'Xã Ia Kla'], canCu: 'Nghị quyết 1664/NQ-UBTVQH15' });
+  return mergedData;
+};
+
+const INITIAL_MERGED_DATA = generateMergedData();
+
+const generate135Records = () => {
+  const data = [];
+  let idCounter = 1;
+  const pendingUrbanUnits = ['P. Quy Nhơn', 'P. Quy Nhơn Đông', 'P. Quy Nhơn Tây', 'P. Quy Nhơn Nam', 'P. Quy Nhơn Bắc', 'Xã Nhơn Châu', 'Xã Tuy Phước', 'Xã Tuy Phước Bắc', 'Xã Tuy Phước Đông', 'Xã Tuy Phước Tây', 'P. Bồng Sơn', 'P. Tam Quan', 'P. Hoài Nhơn', 'P. Hoài Nhơn Bắc', 'P. Hoài Nhơn Nam', 'P. Hoài Nhơn Đông', 'P. Hoài Nhơn Tây', 'P. An Khê', 'Xã Cửu An', 'Xã Xuân An', 'Xã Ngô Mây', 'Xã Biển Hồ', 'Xã Gào', 'Xã Diên Phú'];
+  OLD_REGIONS.forEach(prov => {
+    prov.districts.forEach(dist => {
+      dist.communes.forEach(comm => {
+        const i = idCounter++;
+        const isPending = pendingUrbanUnits.includes(comm);
+        data.push({
+          id: i, tinhMoi: 'Gia Lai', tinhCu: prov.province, huyen: dist.name, xa: comm,
+          tenQh: `Quy hoạch chung ${comm.toLowerCase()}, tỉnh Gia Lai đến năm 2045`,
+          dienTich: (1000 + (i * 50)).toFixed(2), danSo: (5000 + (i * 200)).toLocaleString('en-US'),
+          cqToChuc: `UBND ${comm.replace('Xã ', 'xã ').replace('P. ', 'phường ')}`,
+          cqPheDuyet: i % 2 === 0 ? 'UBND tỉnh Gia Lai' : `UBND ${comm.replace('Xã ', 'xã ').replace('P. ', 'phường ')}`,
+          cqThamDinh: 'Sở Xây dựng',
+          bcThamDinh: !isPending ? `${100 + i}/BC-SXD` : 'Đang cập nhật',
+          yKienSxd: !isPending ? 'Đã có ý kiến thống nhất' : 'Đang lấy ý kiến',
+          qdPheDuyet: !isPending ? `${1000 + i}/QĐ-UBND` : 'Đang cập nhật',
+          congBo: !isPending ? 'Đã công bố' : 'Chưa công bố',
+          camMoc: !isPending && i % 4 === 0 ? 'Đã cắm mốc' : 'Chưa cắm mốc',
+          keHoach: !isPending ? 'Đã ban hành KHTH' : 'Chưa ban hành KHTH',
+          file: '', mapLink: '',
+          tinhHinhGuiHoSo: !isPending ? 'Đã gửi' : 'Chưa gửi',
+          ghiChu: i === 135 ? 'Hồ sơ bổ sung theo NQ1664' : ''
         });
       });
     });
-    return list;
-  }, []);
+  });
+  return data;
+};
 
-  const [records, setRecords] = useState(initialRecords);
-
-  const stats = useMemo(() => {
-    const total = records.length;
-    const approved = records.filter(r => r.status === 'approved').length;
-    const pending = total - approved;
-    const percentage = total > 0 ? ((approved / total) * 100).toFixed(1) : 0;
-    return { total, approved, pending, percentage };
-  }, [records]);
-
-  const filteredRecords = useMemo(() => {
-    return records.filter(r => {
-      const matchSearch = r.xa.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          r.huyen.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          r.tenQh.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchDistrict = districtFilter === '' || r.huyen === districtFilter;
-      return matchSearch && matchDistrict;
-    });
-  }, [records, searchTerm, districtFilter]);
-
-  return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      <header className="bg-blue-800 text-white shadow-md p-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-white p-2 rounded-full text-blue-800">
-              <Layers size={28} />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-wide">CSDL QUY HOẠCH GIA LAI</h1>
-              <p className="text-xs text-blue-200">Hệ thống quản lý quy hoạch & tra cứu sáp nhập đơn vị hành chính</p>
-            </div>
-          </div>
-          <div className="text-right text-xs md:text-sm">
-            <span className="bg-blue-700 px-3 py-1.5 rounded text-blue-100 border border-blue-600 font-mono">
-              Cập nhật dữ liệu: Toàn bộ {stats.total} Đơn vị hành chính
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-        <nav className="flex border-b border-slate-200 bg-white rounded-t-lg shadow-sm overflow-x-auto">
-          <button 
-            onClick={() => setActiveTab('chung')}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-all ${activeTab === 'chung' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-          >
-            <PieChart size={18} /> THỐNG KÊ TIẾN ĐỘ
-          </button>
-          <button 
-            onClick={() => setActiveTab('danhsach')}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-all ${activeTab === 'danhsach' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-          >
-            <ListFilter size={18} /> CHI TIẾT ĐƠN VỊ HÀNH CHÍNH
-          </button>
-        </nav>
-
-        {activeTab === 'chung' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">Tổng đồ án quy hoạch</p>
-                  <h3 className="text-3xl font-bold text-slate-700 mt-1">{stats.total}</h3>
-                </div>
-                <div className="bg-blue-100 p-3 rounded-xl text-blue-600"><Database size={24} /></div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">Đã Phê Duyệt Quy Hoạch</p>
-                  <h3 className="text-3xl font-bold text-emerald-600 mt-1">{stats.approved} <span className="text-sm font-normal text-slate-400">({stats.percentage}%)</span></h3>
-                </div>
-                <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600"><CheckCircle size={24} /></div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">Đang Thẩm Định / Triển Khai</p>
-                  <h3 className="text-3xl font-bold text-amber-600 mt-1">{stats.pending} <span className="text-sm font-normal text-slate-400">({(100 - stats.percentage).toFixed(1)}%)</span></h3>
-                </div>
-                <div className="bg-amber-100 p-3 rounded-xl text-amber-600"><Clock size={24} /></div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-              <h4 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-                <BarChart size={20} className="text-blue-600" /> Tiến Độ Phê Duyệt Quy Hoạch Tổng Thể
-              </h4>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-slate-600">Đồ án đã ban hành quyết định chính thức</span>
-                    <span className="font-semibold text-emerald-600">{stats.percentage}%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                    <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${stats.percentage}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-slate-600">Đồ án đang thẩm định, lập quy hoạch hoặc lấy ý kiến phối hợp</span>
-                    <span className="font-semibold text-amber-600">{(100 - stats.percentage).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                    <div className="bg-amber-400 h-full rounded-full transition-all" style={{ width: `${100 - stats.percentage}%` }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'danhsach' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm xã, phường, huyện hoặc nội dung quy hoạch..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <select
-                value={districtFilter}
-                onChange={(e) => setDistrictFilter(e.target.value)}
-                className="px-4 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 cursor-pointer min-w-[200px]"
-              >
-                <option value="">-- Tất cả Quận/Huyện --</option>
-                <option value="TP Quy Nhơn">TP Quy Nhơn</option>
-                <option value="Thị xã An Nhơn">Thị xã An Nhơn</option>
-                <option value="Thị xã Hoài Nhơn">Thị xã Hoài Nhơn</option>
-                <option value="Huyện Phù Mỹ">Huyện Phù Mỹ</option>
-                <option value="Huyện Tuy Phước">Huyện Tuy Phước</option>
-                <option value="Huyện Phù Cát">Huyện Phù Cát</option>
-                <option value="TP Pleiku">TP Pleiku</option>
-                <option value="Thị xã An Khê">Thị xã An Khê</option>
-                <option value="Huyện Đức Cơ">Huyện Đức Cơ</option>
-                <option value="Huyện Chư Prông">Huyện Chư Prông</option>
-              </select>
-            </div>
-
-            <div className="overflow-x-auto border border-slate-100 rounded-lg">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
-                    <th className="p-3 text-center w-12">STT</th>
-                    <th className="p-3 w-48">Huyện / Xã</th>
-                    <th className="p-3">Tên Đồ Án Quy Hoạch</th>
-                    <th className="p-3 text-right w-32">Diện Tích (ha)</th>
-                    <th className="p-3 text-center w-48">Trạng Thái / Quyết Định</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {filteredRecords.length > 0 ? (
-                    filteredRecords.map((row, idx) => (
-                      <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-3 text-center font-mono text-slate-400">{idx + 1}</td>
-                        <td className="p-3">
-                          <span className="font-semibold block text-slate-800">{row.huyen}</span>
-                          <span className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><MapPin size={12} /> {row.xa}</span>
-                        </td>
-                        <td className="p-3 font-medium text-slate-600">{row.tenQh}</td>
-                        <td className="p-3 text-right font-mono text-slate-600 font-medium">{row.dienTich}</td>
-                        <td className="p-3 text-center">
-                          {row.status === 'approved' ? (
-                            <div className="space-y-1">
-                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-semibold border border-emerald-200">
-                                <CheckCircle size={12} /> Đã phê duyệt
-                              </span>
-                              <span className="block text-[11px] font-mono text-slate-400">{row.qdPheDuyet}</span>
-                            </div>
-                          ) : (
-                            <div className="space-y-1">
-                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded text-xs font-semibold border border-amber-200">
-                                <Clock size={12} /> Đang xử lý
-                              </span>
-                              <span className="block text-[11px] text-slate-400">{row.qdPheDuyet}</span>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="5" className="p-8 text-center text-slate-400">
-                        <AlertTriangle className="mx-auto mb-2 text-slate-300" size={32} />
-                        Không tìm thấy dữ liệu đơn vị hành chính nào phù hợp với bộ lọc.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
+const generateDetailRecords = () => {
+  const data = [];
+  let idCounter = 1;
+  let globalIndex = 0;
+  OLD_REGIONS.forEach(prov => {
+    prov.districts.forEach(dist => {
+      dist.communes.forEach(comm => {
+        globalIndex++;
+        const numProjects = (globalIndex % 3) + 1; 
+        for (let j = 0; j < numProjects; j++) {
+            const i = idCounter++;
+            const isApproved = i % 4 !== 0; 
+            data.push({
+              id: i, tinhMoi: 'Gia Lai', tinhCu: prov.province, huyen: dist.name, xa: comm,
+              tenQh: j === 0 ? `Quy hoạch chi tiết khu trung tâm ${comm.toLowerCase()} (Tỷ lệ 1/500)` : `Quy hoạch chi tiết điểm dân cư số ${j} thuộc ${comm.toLowerCase()} (Tỷ lệ 1/500)`,
+              dienTich: (10 + (i % 40)).toFixed(2), danSo: (1000 + (i * 15)).toLocaleString('en-US'),
+              cqToChuc: UBND ${comm.replace('Xã ', 'xã ').replace('P. ', 'phường ')},cqPheDuyet: UBND ${dist.name}, cqThamDinh: Phòng Kinh tế / Quản lý Đô thị,bcThamDinh: isApproved ? ${200 + i}/BC-UBND : 'Đang cập nhật', yKienSxd: 'Phân cấp địa phương',qdPheDuyet: isApproved ? ${2000 + i}/QĐ-UBND : 'Đang cập nhật',congBo: isApproved ? 'Đã công bố' : 'Chưa công bố',camMoc: isApproved ? 'Đã cắm mốc' : 'Chưa cắm mốc',keHoach: isApproved ? 'Đã ban hành' : 'Đang cập nhật',file: '', mapLink: '',tinhHinhGuiHoSo: isApproved ? 'Đã gửi' : 'Chưa gửi',ghiChu: 'Cụ thể hóa QHC'});}});});});return data;};export default function App() {const [firebaseUser, setFirebaseUser] = useState(null);const [isLoggedIn, setIsLoggedIn] = useState(false);const [showLoginModal, setShowLoginModal] = useState(false);const [showDbModal, setShowDbModal] = useState(false);const [showChangePassModal, setShowChangePassModal] = useState(false);// LOGIN & RECOVERY STATEconst [loginForm, setLoginForm] = useState({ username: '', password: '' });const [loginError, setLoginError] = useState('');const [changePassForm, setChangePassForm] = useState({ current: '', newPass: '', confirm: '' });const [changePassError, setChangePassError] = useState('');const [adminPassword, setAdminPassword] = useState('123456');const [showForgotPassModal, setShowForgotPassModal] = useState(false);const [forgotPassStep, setForgotPassStep] = useState(1);const [recoveryPhone, setRecoveryPhone] = useState('');const [recoveryOTP, setRecoveryOTP] = useState('');const [realGeneratedOTP, setRealGeneratedOTP] = useState('');const [newRecoveryPass, setNewRecoveryPass] = useState('');const [recoveryError, setRecoveryError] = useState('');const ADMIN_PHONE = '0385118757';const ADMIN_EMAIL = 'dangvinhtoi@gmail.com';const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });const [notification, setNotification] = useState('');const [activeTab, setActiveTab] = useState('STATS_CHUNG');const [data, setData] = useState([]);const [detailData, setDetailData] = useState([]);const [mergedData, setMergedData] = useState([]);const [contactData, setContactData] = useState([]);const [reviewData, setReviewData] = useState([]);// BỘ LỌC QH CHUNGconst [searchTerm, setSearchTerm] = useState('');const [filterHuyen, setFilterHuyen] = useState('');const [filterTinhTrang, setFilterTinhTrang] = useState('');const [filterThamQuyen, setFilterThamQuyen] = useState('');const [filterCongBo, setFilterCongBo] = useState('');const [filterCamMoc, setFilterCamMoc] = useState('');const [filterKeHoach, setFilterKeHoach] = useState('');const [filterGuiSXD, setFilterGuiSXD] = useState('');// BỘ LỌC QH CHI TIẾTconst [detailSearchTerm, setDetailSearchTerm] = useState('');const [detailFilterHuyen, setDetailFilterHuyen] = useState('');const [detailFilterXa, setDetailFilterXa] = useState('');const [detailFilterTinhTrang, setDetailFilterTinhTrang] = useState('');const [detailFilterCongBo, setDetailFilterCongBo] = useState('');const [detailFilterCamMoc, setDetailFilterCamMoc] = useState('');const [detailFilterGuiSXD, setDetailFilterGuiSXD] = useState('');// BỘ LỌC SÁP NHẬPconst [mergeFilterHuyen, setMergeFilterHuyen] = useState('');const [mergeFilterXa, setMergeFilterXa] = useState('');// BỘ LỌC LIÊN HỆconst [contactSearchTerm, setContactSearchTerm] = useState('');const [contactFilterHuyen, setContactFilterHuyen] = useState('');// BỘ LỌC RÀ SOÁTconst [reviewSearchTerm, setReviewSearchTerm] = useState('');const [reviewFilterHuyen, setReviewFilterHuyen] = useState('');const [reviewFilterStatus, setReviewFilterStatus] = useState('');// STATE MODALSconst [isModalOpen, setIsModalOpen] = useState(false);const [editingRecord, setEditingRecord] = useState(null);const [formData, setFormData] = useState({});const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);const [editingMergeRecord, setEditingMergeRecord] = useState(null);const [mergeFormData, setMergeFormData] = useState({});const [isContactModalOpen, setIsContactModalOpen] = useState(false);const [editingContactRecord, setEditingContactRecord] = useState(null);const [contactFormData, setContactFormData] = useState({});const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);const [editingReviewRecord, setEditingReviewRecord] = useState(null);const [reviewFormData, setReviewFormData] = useState({});// STATE BÁO CÁO THÔNG MINHconst [reportModal, setReportModal] = useState({ isOpen: false, type: 'CHUNG' });const [reportFile, setReportFile] = useState(null);const [reportProgress, setReportProgress] = useState(0);const [reportStatus, setReportStatus] = useState('');const [showGeneratedReport, setShowGeneratedReport] = useState(false);useEffect(() => {const initAuth = async () => {try {if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);else await signInAnonymously(auth);} catch (e) {console.log("Firebase Auth Offline fallback");setFirebaseUser({ isAnonymous: true, uid: "offline-user" });}};initAuth();const unsubscribe = onAuthStateChanged(auth, (user) => {if (user) setFirebaseUser(user);});return () => unsubscribe();}, []);useEffect(() => {if (!firebaseUser) {// Khởi tạo dữ liệu offline dự phòng nếu không kết nối được FirebasesetData(generate135Records());setDetailData(generateDetailRecords());setMergedData(INITIAL_MERGED_DATA);return;}const collChung = collection(db, 'artifacts', appId, 'public', 'data', 'qh_chung');const collChiTiet = collection(db, 'artifacts', appId, 'public', 'data', 'qh_chitiet');const collSapNhap = collection(db, 'artifacts', appId, 'public', 'data', 'qh_sapnhap');const collDanhBa = collection(db, 'artifacts', appId, 'public', 'data', 'qh_lienhe');const collRaSoat = collection(db, 'artifacts', appId, 'public', 'data', 'qh_rasoat');const collConfig = collection(db, 'artifacts', appId, 'public', 'data', 'config');const unsubConfig = onSnapshot(collConfig, (snapshot) => {let found = false;snapshot.forEach(docSnap => {if (docSnap.id === 'admin') { setAdminPassword(docSnap.data().password || '123456'); found = true; }});if (!found) setAdminPassword('123456');});const checkAndInitDB = async () => {try {const sysRef = doc(collConfig, 'system');const sysDoc = await getDoc(sysRef);if (!sysDoc.exists()) {const qhChungSnap = await getDocs(collChung);if (qhChungSnap.empty) {const batch1 = writeBatch(db); generate135Records().forEach(item => batch1.set(doc(collChung, item.id.toString()), item)); await batch1.commit();const batch2 = writeBatch(db); generateDetailRecords().forEach(item => batch2.set(doc(collChiTiet, item.id.toString()), item)); await batch2.commit();const batch3 = writeBatch(db); INITIAL_MERGED_DATA.forEach(item => batch3.set(doc(collSapNhap, item.id.toString()), item)); await batch3.commit();await setDoc(sysRef, { initialized: true });} else await setDoc(sysRef, { initialized: true });}} catch(err) { console.error('Lỗi khi kiểm tra khởi tạo:', err); }};checkAndInitDB();const unsubChung = onSnapshot(collChung, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));fetchedData.sort((a, b) => a.id - b.id); setData(fetchedData.length ? fetchedData : generate135Records());}, () => setData(generate135Records()));const unsubChiTiet = onSnapshot(collChiTiet, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));fetchedData.sort((a, b) => a.id - b.id); setDetailData(fetchedData.length ? fetchedData : generateDetailRecords());}, () => setDetailData(generateDetailRecords()));const unsubSapNhap = onSnapshot(collSapNhap, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: parseInt(docSnap.id) }));fetchedData.sort((a, b) => a.id - b.id); setMergedData(fetchedData.length ? fetchedData : INITIAL_MERGED_DATA);}, () => setMergedData(INITIAL_MERGED_DATA));const unsubContact = onSnapshot(collDanhBa, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: docSnap.id }));fetchedData.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0)); setContactData(fetchedData);});const unsubRaSoat = onSnapshot(collRaSoat, (snapshot) => {const fetchedData = []; snapshot.forEach(docSnap => fetchedData.push({ ...docSnap.data(), id: docSnap.id }));fetchedData.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0)); setReviewData(fetchedData);});return () => { unsubChung(); unsubChiTiet(); unsubSapNhap(); unsubContact(); unsubRaSoat(); unsubConfig(); };}, [firebaseUser]);const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(''), 4000); };const openConfirm = (title, message, onConfirm) => setConfirmDialog({ isOpen: true, title, message, onConfirm });const closeConfirm = () => setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: null });const COLUMNS = [{ key: 'stt', label: 'STT', width: 'w-12' },{ key: 'tinhMoi', label: 'Tỉnh mới', width: 'w-24' },{ key: 'tinhCu', label: 'Tỉnh cũ', width: 'w-24' },{ key: 'huyen', label: 'Huyện/Thị xã', width: 'w-36' },{ key: 'xa', label: 'Xã/Phường', width: 'w-36' },{ key: 'tenQh', label: 'Tên quy hoạch', width: 'min-w-[250px] max-w-[350px]' },{ key: 'dienTich', label: 'Diện tích (ha)', width: 'w-28' },{ key: 'danSo', label: 'Dân số (2025/2035/2045)', width: 'w-32' },{ key: 'cqToChuc', label: 'CQ tổ chức lập', width: 'w-40' },{ key: 'cqPheDuyet', label: 'CQ phê duyệt', width: 'w-40' },{ key: 'cqThamDinh', label: 'CQ thẩm định', width: 'w-40' },{ key: 'bcThamDinh', label: 'BC thẩm định', width: 'w-36' },{ key: 'yKienSxd', label: 'Ý kiến Sở XD', width: 'w-36' },{ key: 'qdPheDuyet', label: 'QĐ phê duyệt', width: 'w-36' },{ key: 'congBo', label: 'Công bố', width: 'w-28' },{ key: 'camMoc', label: 'Cắm mốc', width: 'w-28' },{ key: 'keHoach', label: 'Kế hoạch TH', width: 'w-36' },{ key: 'file', label: 'Đính kèm', width: 'w-24' },{ key: 'mapLink', label: 'Bản đồ', width: 'w-24' },{ key: 'tinhHinhGuiHoSo', label: 'Gửi hồ sơ SXD', width: 'w-36' },{ key: 'ghiChu', label: 'Ghi chú', width: 'min-w-[150px] max-w-[250px]' }];// EXPORT EXCEL & CSV HANDLERSconst handleExportExcel = (exportData, sheetName, isDetail = false) => {if (!exportData || exportData.length === 0) return showNotification('Không có dữ liệu để xuất!');const headers = COLUMNS.map(col => "${isDetail && col.key === 'danSo' ? 'Dân số' : col.label}").join(',');const rows = exportData.map((row, index) => {return COLUMNS.map(col => "${(col.key === 'stt' ? (index + 1) : (row[col.key] || '')).toString().replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " ")}").join(',');});const csvContent = [headers, ...rows].join('\n');const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });const link = document.createElement('a'); link.href = URL.createObjectURL(blob);link.download = ${sheetName}_${new Date().getTime()}.csv; link.click();};const handleExportMergeExcel = () => {if (filteredMergeData.length === 0) return showNotification('Không có dữ liệu để xuất!');const headers = '"STT","Tỉnh cũ","Huyện/Thị xã","Xã/Phường MỚI","Các Xã/Phường CŨ","Căn cứ pháp lý"';const rows = filteredMergeData.map((row, index) => "${index + 1}","${row.tinhCu || ''}","${row.huyen || ''}","${row.xaMoi || ''}","${Array.isArray(row.cacXaCu) ? row.cacXaCu.join('; ') : (row.cacXaCu||'') }","${row.canCu || ''}");const csvContent = [headers, ...rows].join('\n');const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });const link = document.createElement('a'); link.href = URL.createObjectURL(blob);link.download = DS_SapNhapDVHC_${new Date().getTime()}.csv; link.click();};const handleExportContactExcel = () => {if (filteredContactData.length === 0) return showNotification('Không có dữ liệu để xuất!');const headers = '"STT","Đơn vị","Họ và tên","Điện thoại","Chức danh","Email"';const rows = filteredContactData.map((row, index) => "${index + 1}","${row.donVi || ''}","${row.hoTen || ''}","${row.dienThoai || ''}","${row.chucDanh || ''}","${row.email || ''}");const csvContent = [headers, ...rows].join('\n');const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });const link = document.createElement('a'); link.href = URL.createObjectURL(blob);link.download = DanhBa_LienHe_${new Date().getTime()}.csv; link.click();};const handleExportReviewExcel = () => {if (filteredReviewData.length === 0) return showNotification('Không có dữ liệu để xuất!');const headers = '"STT","Tỉnh (Cũ)","Huyện/Thị xã (Cũ)","Nội dung định hướng phát triển","Đơn vị phụ trách","Trạng thái rà soát","Ghi chú","Đính kèm"';const rows = filteredReviewData.map((row, index) => "${index + 1}","${row.tinhCu || ''}","${row.huyen || ''}","${(row.noiDung || '').replace(/"/g, '""')}","${row.coQuan || ''}","${row.trangThai || ''}","${(row.ghiChu || '').replace(/"/g, '""')}","${row.file || ''}");const csvContent = [headers, ...rows].join('\n');const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });const link = document.createElement('a'); link.href = URL.createObjectURL(blob);link.download = RaSoatDinhHuong_${new Date().getTime()}.csv; link.click();};const handleExportDB = () => {const exportObj = { qhChung: data, qhChiTiet: detailData, qhSapNhap: mergedData, qhLienHe: contactData, qhRaSoat: reviewData };const jsonString = JSON.stringify(exportObj);const blob = new Blob([jsonString], { type: "application/json" });const url = URL.createObjectURL(blob);const downloadAnchorNode = document.createElement('a');downloadAnchorNode.setAttribute("href", url);downloadAnchorNode.setAttribute("download", QuyHoachGiaLai_Backup_${new Date().getTime()}.json);document.body.appendChild(downloadAnchorNode);downloadAnchorNode.click();downloadAnchorNode.remove();URL.revokeObjectURL(url);showNotification('Đã tải xuống bản sao lưu dữ liệu!');};const handleImportDB = (e) => {const file = e.target.files[0];if (!file) return;const reader = new FileReader();reader.onload = async (event) => {try {let rawData = event.target.result;if (rawData.charCodeAt(0) === 0xFEFF) rawData = rawData.slice(1);const jsonData = JSON.parse(rawData);openConfirm('Xác nhận phục hồi', 'Hệ thống sẽ XÓA TOÀN BỘ dữ liệu hiện tại và nạp lại bằng file của bạn. Xác nhận?', async () => {closeConfirm(); setShowDbModal(false);setData(jsonData.qhChung || []);setDetailData(jsonData.qhChiTiet || []);setMergedData(jsonData.qhSapNhap || []);setContactData(jsonData.qhLienHe || []);setReviewData(jsonData.qhRaSoat || []);showNotification('Phục hồi dữ liệu cấu hình thành công!');});} catch (error) { showNotification(Lỗi định dạng file: ${error.message}); }};reader.readAsText(file, "UTF-8");e.target.value = '';};const handleResetToDefaultDB = () => {openConfirm('Khôi phục CSDL Gốc', 'Hệ thống sẽ XÓA SẠCH dữ liệu hiện tại và nạp lại cấu hình gốc. Có tiếp tục?', () => {closeConfirm(); setShowDbModal(false);setData(generate135Records());setDetailData(generateDetailRecords());setMergedData(INITIAL_MERGED_DATA);setContactData([]);setReviewData([]);setAdminPassword('123456');showNotification('Khôi phục CSDL gốc thành công!');});};const parseCSVLine = (text) => {const rows = []; let current = ''; let inQuotes = false;for (let i = 0; i < text.length; i++) {let char = text[i];if (char === '"' && text[i+1] === '"') { current += '"'; i++; }else if (char === '"') { inQuotes = !inQuotes; }else if (char === '\n' && !inQuotes) { rows.push(current); current = ''; }else { current += char; }}if (current) rows.push(current);return rows;};const parseCSVColumns = (row, separator) => {const cols = []; let current = ''; let inQuotes = false;for (let i = 0; i < row.length; i++) {let char = row[i];if (char === '"' && row[i+1] === '"') { current += '"'; i++; }else if (char === '"') { inQuotes = !inQuotes; }else if (char === separator && !inQuotes) { cols.push(current.trim()); current = ''; }else { current += char; }}cols.push(current.trim());return cols;};const handleImportCSV = (e, type) => {const file = e.target.files[0];if (!file) return;const reader = new FileReader();reader.onload = async (event) => {try {let rawData = event.target.result;if (rawData.charCodeAt(0) === 0xFEFF) rawData = rawData.slice(1);const lines = parseCSVLine(rawData).filter(l => l.trim());if (lines.length < 2) return showNotification('File không có dữ liệu!');let separator = ',';if (lines[0].indexOf(';') > lines[0].indexOf(',')) separator = ';';const headers = parseCSVColumns(lines[0], separator).map(h => h.toLowerCase().trim().replace(/['"]/g, ''));const recordsToSave = [];let lastDonVi = ''; let lastHuyen = ''; let lastTinh = '';for (let i = 1; i < lines.length; i++) {let cols = parseCSVColumns(lines[i], separator);const rawItem = {};headers.forEach((h, index) => { rawItem[h] = cols[index] ? cols[index].trim() : ''; });const getVal = (keys) => {for (let k of keys) {const found = Object.keys(rawItem).find(rk => rk.includes(k));if (found && rawItem[found]) return rawItem[found];}return '';};if (type === 'CHUNG' || type === 'CHITIET') {const item = {id: parseInt(getVal(['stt','id'])) || (Date.now() + i),tinhMoi: 'Gia Lai', tinhCu: getVal(['tỉnh cũ']),huyen: getVal(['huyện','thị xã','thành phố']), xa: getVal(['xã','phường']),tenQh: getVal(['tên quy hoạch','tên qh']), dienTich: getVal(['diện tích']), danSo: getVal(['dân số']),cqToChuc: getVal(['tổ chức','cq tổ chức']), cqPheDuyet: getVal(['cơ quan phê duyệt','cq phê duyệt']),cqThamDinh: getVal(['thẩm định']), bcThamDinh: getVal(['báo cáo thẩm định']),yKienSxd: getVal(['ý kiến','sxd']), qdPheDuyet: getVal(['quyết định','qđ']),congBo: getVal(['công bố']), camMoc: getVal(['cắm mốc']), keHoach: getVal(['kế hoạch']),file: getVal(['file','đính kèm']), mapLink: getVal(['bản đồ']),tinhHinhGuiHoSo: getVal(['gửi hồ sơ']), ghiChu: getVal(['ghi chú'])};if (item.huyen && item.xa) recordsToSave.push(item);}else if (type === 'LIENHE') {let donVi = getVal(['đơn vị', 'huyện', 'xã']);if (donVi) lastDonVi = donVi; else donVi = lastDonVi;const hoTen = getVal(['họ và tên', 'họ tên']);const dienThoai = getVal(['điện thoại', 'sđt']);if (hoTen || dienThoai) recordsToSave.push({ id: Date.now().toString() + i, donVi, hoTen, dienThoai, chucDanh: getVal(['chức danh']), email: getVal(['email']) });}else if (type === 'SAPNHAP') {let tinh = getVal(['tỉnh']); let huyen = getVal(['huyện']);if (tinh) lastTinh = tinh; else tinh = lastTinh;if (huyen) lastHuyen = huyen; else huyen = lastHuyen;const xaMoi = getVal(['xã mới', 'phường mới']);let cacXaCuStr = getVal(['xã cũ', 'phường cũ']);if (xaMoi) recordsToSave.push({ id: Date.now().toString() + i, tinhCu: tinh, huyen, xaMoi, cacXaCu: cacXaCuStr ? cacXaCuStr.split(',').map(s=>s.trim()) : [], canCu: getVal(['căn cứ']) || 'Nghị quyết 1664/NQ-UBTVQH15' });}}if (recordsToSave.length === 0) return showNotification('Không tìm thấy dữ liệu hợp lệ!');openConfirm('Xác nhận nạp CSV', Nạp thêm ${recordsToSave.length} dòng dữ liệu từ file CSV vào hệ thống?, () => {closeConfirm(); setShowDbModal(false);if (type === 'CHUNG') setData(recordsToSave);else if (type === 'CHITIET') setDetailData(recordsToSave);else if (type === 'LIENHE') setContactData(recordsToSave);else if (type === 'SAPNHAP') setMergedData(recordsToSave);showNotification('Nạp dữ liệu CSV thành công!');});} catch (error) { showNotification('Lỗi đọc file CSV!'); }};reader.readAsText(file, "UTF-8"); e.target.value = '';};// FILTER LOGICconst filteredData = useMemo(() => {return data.filter(item => {const matchSearch = (item.xa||'').toLowerCase().includes(searchTerm.toLowerCase()) || (item.tenQh||'').toLowerCase().includes(searchTerm.toLowerCase());const matchHuyen = filterHuyen === '' ? true : item.huyen === filterHuyen;const isPheDuyet = item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật' && item.qdPheDuyet.trim() !== '';const matchTinhTrang = filterTinhTrang === '' ? true : filterTinhTrang === 'Đã phê duyệt' ? isPheDuyet : !isPheDuyet;const matchThamQuyen = filterThamQuyen === '' ? true : filterThamQuyen === 'UBND tỉnh' ? (item.cqPheDuyet||'').toLowerCase().includes('tỉnh') : ((item.cqPheDuyet||'').toLowerCase().includes('xã') || (item.cqPheDuyet||'').toLowerCase().includes('phường'));const matchCongBo = filterCongBo === '' ? true : filterCongBo === 'Đã công bố' ? (item.congBo||'').toLowerCase().includes('đã') : !(item.congBo||'').toLowerCase().includes('đã');const matchCamMoc = filterCamMoc === '' ? true : filterCamMoc === 'Đã cắm mốc' ? (item.camMoc||'').toLowerCase().includes('đã') : !(item.camMoc||'').toLowerCase().includes('đã');const matchKeHoach = filterKeHoach === '' ? true : filterKeHoach === 'Đã ban hành' ? (item.keHoach||'').toLowerCase().includes('đã') : !(item.keHoach||'').toLowerCase().includes('đã');const matchGuiSXD = filterGuiSXD === '' ? true : filterGuiSXD === 'Đã gửi' ? (item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã') : !(item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã');return matchSearch && matchHuyen && matchTinhTrang && matchThamQuyen && matchCongBo && matchCamMoc && matchKeHoach && matchGuiSXD;});}, [data, searchTerm, filterHuyen, filterTinhTrang, filterThamQuyen, filterCongBo, filterCamMoc, filterKeHoach, filterGuiSXD]);const filteredDetailData = useMemo(() => {return detailData.filter(item => {const matchSearch = (item.xa||'').toLowerCase().includes(detailSearchTerm.toLowerCase()) || (item.tenQh||'').toLowerCase().includes(detailSearchTerm.toLowerCase());const matchHuyen = detailFilterHuyen === '' ? true : item.huyen === detailFilterHuyen;const matchXa = detailFilterXa === '' ? true : item.xa === detailFilterXa;const isPheDuyet = item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật' && item.qdPheDuyet.trim() !== '';const matchTinhTrang = detailFilterTinhTrang === '' ? true : detailFilterTinhTrang === 'Đã phê duyệt' ? isPheDuyet : !isPheDuyet;const matchCongBo = detailFilterCongBo === '' ? true : detailFilterCongBo === 'Đã công bố' ? (item.congBo||'').toLowerCase().includes('đã') : !(item.congBo||'').toLowerCase().includes('đã');const matchCamMoc = detailFilterCamMoc === '' ? true : detailFilterCamMoc === 'Đã cắm mốc' ? (item.camMoc||'').toLowerCase().includes('đã') : !(item.camMoc||'').toLowerCase().includes('đã');const matchGuiSXD = detailFilterGuiSXD === '' ? true : detailFilterGuiSXD === 'Đã gửi' ? (item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã') : !(item.tinhHinhGuiHoSo||'').toLowerCase().includes('đã');return matchSearch && matchHuyen && matchXa && matchTinhTrang && matchCongBo && matchCamMoc && matchGuiSXD;});}, [detailData, detailSearchTerm, detailFilterHuyen, detailFilterXa, detailFilterTinhTrang, detailFilterCongBo, detailFilterCamMoc, detailFilterGuiSXD]);const filteredMergeData = useMemo(() => {return mergedData.filter(item => {return (mergeFilterHuyen === '' || item.huyen === mergeFilterHuyen) && (mergeFilterXa === '' || item.xaMoi === mergeFilterXa);});}, [mergedData, mergeFilterHuyen, mergeFilterXa]);const filteredContactData = useMemo(() => {return contactData.filter(item => {const matchSearch = (item.hoTen||'').toLowerCase().includes(contactSearchTerm.toLowerCase()) || (item.dienThoai||'').includes(contactSearchTerm);return matchSearch && (contactFilterHuyen === '' || (item.donVi||'').includes(contactFilterHuyen));});}, [contactData, contactSearchTerm, contactFilterHuyen]);const filteredReviewData = useMemo(() => {return reviewData.filter(item => {const matchSearch = (item.noiDung || '').toLowerCase().includes(reviewSearchTerm.toLowerCase()) || (item.coQuan || '').toLowerCase().includes(reviewSearchTerm.toLowerCase());return matchSearch && (reviewFilterHuyen === '' || item.huyen === reviewFilterHuyen) && (reviewFilterStatus === '' || item.trangThai === reviewFilterStatus);});}, [reviewData, reviewSearchTerm, reviewFilterHuyen, reviewFilterStatus]);const statsOverview = useMemo(() => {const total = data.length;const approved = data.filter(d => d.qdPheDuyet && d.qdPheDuyet !== 'Đang cập nhật').length;const pending = total - approved;return { total, approved, pending, approvedPercent: total > 0 ? ((approved/total)*100).toFixed(1) : '0.0', pendingPercent: total > 0 ? ((pending/total)*100).toFixed(1) : '0.0' };}, [data]);const detailedStats = useMemo(() => {const result = { 'Bình Định': [], 'Gia Lai': [] }; const grouped = {};OLD_REGIONS.forEach(prov => prov.districts.forEach(dist => grouped[dist.name] = { name: dist.name, tinhCu: prov.province, total: 0, approved: 0, pending: 0 }));detailData.forEach(item => {if (grouped[item.huyen]) {grouped[item.huyen].total++;if (item.qdPheDuyet && item.qdPheDuyet !== 'Đang cập nhật') grouped[item.huyen].approved++; else grouped[item.huyen].pending++;}});Object.values(grouped).forEach(g => { if (result[g.tinhCu] && g.total > 0) result[g.tinhCu].push(g); });return result;}, [detailData]);// FORM HANDLERSconst handleLogin = (e) => {e.preventDefault();if (loginForm.username === 'admin' && loginForm.password === adminPassword) {setIsLoggedIn(true); setShowLoginModal(false); setLoginForm({username:'', password:''}); setLoginError(''); showNotification('Đăng nhập quản trị thành công!');} else setLoginError('Tài khoản hoặc mật khẩu không chính xác!');};const handleChangePassword = (e) => {e.preventDefault();if (changePassForm.current !== adminPassword) return setChangePassError('Mật khẩu hiện tại không đúng!');if (changePassForm.newPass.length < 6) return setChangePassError('Mật khẩu mới phải từ 6 ký tự!');if (changePassForm.newPass !== changePassForm.confirm) return setChangePassError('Mật khẩu xác nhận không khớp!');setAdminPassword(changePassForm.newPass); setShowChangePassModal(false); setChangePassForm({ current: '', newPass: '', confirm: '' }); setChangePassError(''); showNotification('Đổi mật khẩu thành công!');};const openModal = (record = null, isDetail = false) => {if (!isLoggedIn) return;if (record) { setEditingRecord({ ...record, _isDetail: isDetail }); setFormData({...record}); }else { setEditingRecord({ _isDetail: isDetail }); setFormData({ tinhMoi: 'Gia Lai', tinhCu: '', huyen: '', xa: '', tenQh: '', dienTich: '', danSo: '', cqToChuc: '', cqPheDuyet: '', cqThamDinh: '', bcThamDinh: 'Đang cập nhật', yKienSxd: 'Đang cập nhật', qdPheDuyet: 'Đang cập nhật', congBo: 'Chưa công bố', camMoc: 'Chưa cắm mốc', keHoach: 'Đang cập nhật', file: '', mapLink: '', tinhHinhGuiHoSo: 'Chưa gửi', ghiChu: '' }); }setIsModalOpen(true);};const handleSave = (e) => {e.preventDefault();const isDetail = editingRecord?._isDetail;const targetData = isDetail ? detailData : data;const setTargetData = isDetail ? setDetailData : setData;if (editingRecord?.id) {setTargetData(targetData.map(item => item.id === editingRecord.id ? { ...formData } : item));} else {const newId = Date.now();setTargetData([...targetData, { ...formData, id: newId }]);}setIsModalOpen(false); showNotification('Đã lưu hồ sơ thành công!');};const handleDelete = (id, isDetail = false) => {if (!isLoggedIn) return;openConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa hồ sơ này?', () => {if (isDetail) setDetailData(detailData.filter(d => d.id !== id));else setData(data.filter(d => d.id !== id));closeConfirm(); showNotification('Đã xóa hồ sơ thành công.');});};const openMergeModal = (record = null) => {if (!isLoggedIn) return;if (record) { setEditingMergeRecord(record); setMergeFormData({ ...record, cacXaCuStr: Array.isArray(record.cacXaCu) ? record.cacXaCu.join(', ') : record.cacXaCu }); }else { setEditingMergeRecord(null); setMergeFormData({ tinhCu: 'Gia Lai', huyen: '', xaMoi: '', cacXaCuStr: '', canCu: 'Nghị quyết 1664/NQ-UBTVQH15' }); }setIsMergeModalOpen(true);};const handleSaveMerge = (e) => {e.preventDefault();const newRecord = { ...mergeFormData, cacXaCu: mergeFormData.cacXaCuStr ? mergeFormData.cacXaCuStr.split(',').map(s => s.trim()) : [] };delete newRecord.cacXaCuStr;if (editingMergeRecord?.id) setMergedData(mergedData.map(m => m.id === editingMergeRecord.id ? newRecord : m));else setMergedData([...mergedData, { ...newRecord, id: Date.now() }]);setIsMergeModalOpen(false); showNotification('Đã lưu sáp nhập!');};const openContactModal = (record = null) => {if (!isLoggedIn) return;if (record) { setEditingContactRecord(record); setContactFormData({ ...record }); }else { setEditingContactRecord(null); setContactFormData({ donVi: '', hoTen: '', dienThoai: '', chucDanh: '', email: '' }); }setIsContactModalOpen(true);};const handleSaveContact = (e) => {e.preventDefault();if (editingContactRecord?.id) setContactData(contactData.map(c => c.id === editingContactRecord.id ? { ...contactFormData } : c));else setContactData([...contactData, { ...contactFormData, id: Date.now().toString() }]);setIsContactModalOpen(false); showNotification('Đã cập nhật danh bạ liên hệ!');};const openReviewModal = (record = null) => {if (!isLoggedIn) return;if (record) { setEditingReviewRecord(record); setReviewFormData({ ...record }); }else { setEditingReviewRecord(null); setReviewFormData({ tinhCu: 'Gia Lai', huyen: '', noiDung: '', coQuan: '', trangThai: 'Chưa rà soát', file: '', ghiChu: '' }); }setIsReviewModalOpen(true);};const handleSaveReview = (e) => {e.preventDefault();if (editingReviewRecord?.id) setReviewData(reviewData.map(r => r.id === editingReviewRecord.id ? { ...reviewFormData } : r));else setReviewData([...reviewData, { ...reviewFormData, id: Date.now().toString() }]);setIsReviewModalOpen(false); showNotification('Đã lưu dữ liệu rà soát định hướng!');};const handleGenerateSmartReport = () => {if (!reportFile) return showNotification('Vui lòng tải lên file mẫu đề cương báo cáo!');setReportProgress(20); setReportStatus('Đang đọc cấu trúc file văn bản mẫu...');setTimeout(() => { setReportProgress(60); setReportStatus('Đang tổng hợp số liệu thời gian thực từ CSDL quy hoạch...'); }, 1200);setTimeout(() => { setReportProgress(100); setReportStatus('Hoàn tất cấu trúc báo cáo!'); setTimeout(() => setShowGeneratedReport(true), 400); }, 2500);};return (<>{notification && ( {notification})}CSDL QUY HOẠCH GIA LAIHệ thống quản lý quy hoạch & tra cứu sáp nhập ĐVHCSở Xây dựng Gia Lai Bản cập nhật dữ liệu năm 2026{isLoggedIn ? ( Quản trị viên<button onClick={() => setShowDbModal(true)} className="text-xs bg-indigo-600 hover:bg-indigo-700 px-2 py-0.5 rounded text-white font-medium">CSDL<button onClick={() => setShowChangePassModal(true)} className="text-xs bg-amber-600 hover:bg-amber-700 px-2 py-0.5 rounded text-white font-medium">Đổi MK<button onClick={() => setIsLoggedIn(false)} className="text-xs bg-red-600 hover:bg-red-700 px-2 py-0.5 rounded text-white font-medium">Thoát) : (<button onClick={() => setShowLoginModal(true)} className="text-sm bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm flex items-center gap-1.5"> Đăng nhập)}<button onClick={() => setActiveTab('STATS_CHUNG')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'STATS_CHUNG' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-emerald-600'} }> THỐNG KÊ QUY HOẠCH CHUNG<button onClick={() => setActiveTab('STATS_CHITIET')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'STATS_CHITIET' ? 'border-purple-500 text-purple-600' : 'border-transparent text-slate-500 hover:text-purple-600'}}> THỐNG KÊ QUY HOẠCH CHI TIẾT<button onClick={() => setActiveTab('MAIN')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'MAIN' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-blue-600'}}> QUY HOẠCH CHUNG<button onClick={() => setActiveTab('REVIEW')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'REVIEW' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-500 hover:text-rose-600'}}> RÀ SOÁT ĐỊNH HƯỚNG HUYỆN CŨ<button onClick={() => setActiveTab('MAIN_CHITIET')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'MAIN_CHITIET' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-indigo-600'}}> QUY HOẠCH CHI TIẾT<button onClick={() => setActiveTab('MERGE')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'MERGE' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-amber-600'}}> TRA CỨU SÁP NHẬP ĐVHC<button onClick={() => setActiveTab('CONTACTS')} className={pb-3 px-2 font-bold text-sm border-b-4 flex items-center gap-2 whitespace-nowrap ${activeTab === 'CONTACTS' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-slate-500 hover:text-cyan-600'}}> ĐẦU MỐI LIÊN HỆ ĐỊA PHƯƠNG{/* STATS CHUNG */}{activeTab === 'STATS_CHUNG' && (Tiến độ tổng hợp quy hoạch chung đô thị & nông thôn Gia Lai{isLoggedIn && (<button onClick={() => openReportModal('CHUNG')} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg border border-emerald-200 text-sm hover:bg-emerald-100 shadow-sm"> Báo cáo thông minh)}Tổng số ĐVHC{statsOverview.total}Đã duyệt đồ án{statsOverview.approved}({statsOverview.approvedPercent}%)Đang thẩm định{statsOverview.pending}({statsOverview.pendingPercent}%)
