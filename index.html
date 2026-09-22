@@ -1,14 +1,378 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hệ thống CSDL Quy Hoạch Gia Lai</title>
-    <!-- Nhúng thư viện Tailwind CSS để hiển thị giao diện đẹp mắt -->
-    <script src="https://tailwindcss.com"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ thống Quản lý Quy hoạch & Dữ liệu Hành chính Gia Lai</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React 18 & ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel Standalone (Biên dịch JSX trực tiếp trên trình duyệt) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased font-sans">
+  <div id="root"></div>
+
+  <!-- Mã nguồn React Component -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // ==========================================
+    // 1. CẤU HÌNH BIẾN TOÀN CỤC & FIREBASE STUB
+    // ==========================================
+    const appId = "gialai-planning-app";
+    const db = null; // Cấu hình Firebase Firestore thực tế nếu cần kết nối CSDL Cloud
+
+    // ==========================================
+    // 2. DỮ LIỆU HÀNH CHÍNH & SÁP NHẬP (GIA LAI & BÌNH ĐỊNH)
+    // ==========================================
+    const OLD_REGIONS = [
+      {
+        province: 'Bình Định',
+        districts: [
+          { name: 'TP Quy Nhơn', communes: ['P. Quy Nhơn', 'P. Quy Nhơn Đông', 'P. Quy Nhơn Tây', 'P. Quy Nhơn Nam', 'P. Quy Nhơn Bắc', 'Xã Nhơn Châu'] },
+          { name: 'Thị xã An Nhơn', communes: ['P. An Nhơn', 'P. An Nhơn Bắc', 'P. An Nhơn Đông', 'P. An Nhơn Nam', 'P. Bình Định', 'Xã An Nhơn Tây'] },
+          { name: 'Thị xã Hoài Nhơn', communes: ['P. Bồng Sơn', 'P. Tam Quan', 'P. Hoài Nhơn', 'P. Hoài Nhơn Bắc', 'P. Hoài Nhơn Nam', 'P. Hoài Nhơn Đông', 'P. Hoài Nhơn Tây'] },
+          { name: 'Huyện Phù Mỹ', communes: ['Xã Phù Mỹ', 'Xã Phù Mỹ Đông', 'Xã Phù Mỹ Tây', 'Xã Phù Mỹ Bắc', 'Xã Phù Mỹ Nam', 'Xã An Lương', 'Xã Bình Dương'] },
+          { name: 'Huyện Tuy Phước', communes: ['Xã Tuy Phước', 'Xã Tuy Phước Bắc', 'Xã Tuy Phước Đông', 'Xã Tuy Phước Tây'] },
+          { name: 'Huyện Phù Cát', communes: ['Xã Phù Cát', 'Xã Cát Tiến', 'Xã Cát Hanh', 'Xã Cát Khánh', 'Xã Đề Gi'] },
+          { name: 'Huyện Tây Sơn', communes: ['Xã Tây Sơn', 'Xã Bình Khê', 'Xã Bình An', 'Xã Bình Hiệp', 'Xã Bình Phú'] },
+          { name: 'Huyện Vĩnh Thạnh', communes: ['Xã Vĩnh Thạnh', 'Xã Vĩnh Quang', 'Xã Vĩnh Sơn', 'Xã Vĩnh Thịnh'] },
+          { name: 'Huyện Hoài Ân', communes: ['Xã Hoài Ân', 'Xã Ân Tường', 'Xã Ân Tường Tây', 'Xã Ân Hảo', 'Xã Ân Hữu', 'Xã Kim Sơn', 'Xã Vạn Đức'] },
+          { name: 'Huyện An Lão', communes: ['Xã An Lão', 'Xã An Vinh', 'Xã An Hòa', 'Xã An Toàn'] },
+          { name: 'Huyện Vân Canh', communes: ['Xã Vân Canh', 'Xã Canh Vinh', 'Xã Canh Liên'] }
+        ]
+      },
+      {
+        province: 'Gia Lai',
+        districts: [
+          { name: 'TP Pleiku', communes: ['Xã Biển Hồ', 'Xã Gào', 'Xã Diên Phú'] },
+          { name: 'Thị xã An Khê', communes: ['P. An Khê', 'Xã Cửu An', 'Xã Xuân An', 'Xã Ngô Mây'] },
+          { name: 'Thị xã Ayun Pa', communes: ['Xã Ia Rbol', 'P. Ayun Pa'] },
+          { name: 'Huyện Đức Cơ', communes: ['Xã Ia Dơk', 'Xã Ia Krêl', 'Xã Ia Nan', 'Xã Ia Dom', 'Xã Ia Pnôn'] },
+          { name: 'Huyện Chư Păh', communes: ['Xã Chư Păh', 'Xã Ia Khươl', 'Xã Ia Phí', 'Xã Nghĩa Hòa', 'Xã Hòa Hội'] },
+          { name: 'Huyện Kbang', communes: ['Xã Kbang', 'Xã Krong', 'Xã Kông Bơ La', 'Xã Tơ Tung', 'Xã Sơn Lang', 'Xã Đông', 'Xã Nghĩa An', 'Xã Đăk Hlơ', 'Xã Ya Hội'] },
+          { name: 'Huyện Kông Chro', communes: ['Xã Kông Chro', 'Xã Đăk Song', 'Xã Chơ Long', 'Xã Ya Ma', 'Xã Chư Krey', 'Xã SRó', 'Xã Đak Rong'] },
+          { name: 'Huyện Đak Đoa', communes: ['Xã Đak Đoa', 'Xã Đak Sơmei', 'Xã Kdang', 'Xã Ia Băng'] },
+          { name: 'Huyện Chư Sê', communes: ['Xã Chư Sê', 'Xã Al Bá', 'Xã Bờ Ngoong'] },
+          { name: 'Huyện Mang Yang', communes: ['Xã Mang Yang', 'Xã Lơ Pang', 'Xã Kon Chiêng', 'Xã Hra', 'Xã Ayun'] },
+          { name: 'Huyện Chư Prông', communes: ['Xã Chư Prông', 'Xã Bàu Cạn', 'Xã Ia Boòng', 'Xã Ia Pia', 'Xã Ia Tôr', 'Xã Ia Púch', 'Xã Ia Mơ', 'Xã Ia Bang'] },
+          { name: 'Huyện Chư Pưh', communes: ['Xã Chư Pưh', 'Xã Ia Hrú', 'Xã Ia Le', 'Xã Ia Dreh'] },
+          { name: 'Huyện Phú Thiện', communes: ['Xã Phú Thiện', 'Xã Ia Ake', 'Xã Chư A Thai'] },
+          { name: 'Huyện Ia Pa', communes: ['Xã Ia Pa', 'Xã Pờ Tó'] },
+          { name: 'Huyện Krông Pa', communes: ['Xã Phú Túc', 'Xã Ia Rsai', 'Xã Uar', 'Xã Ia Hiao', 'Xã Chư Rcăm'] },
+          { name: 'Huyện Đak Pơ', communes: ['Xã Đak Pơ', 'Xã Cư An', 'Xã Hội Sơn'] },
+          { name: 'Huyện Ia Grai', communes: ['Xã Ia Grai', 'Xã Ia Krái', 'Xã Ia Hrung', 'Xã Ia Chia', 'Xã Ia O'] }
+        ]
+      }
+    ];
+
+    // ==========================================
+    // 3. HÀM TẠO DỮ LIỆU TỰ ĐỘNG (ĐÃ SỬA DẤU BACKTICKS ` `)
+    // ==========================================
+    const generate135Records = () => {
+      const data = [];
+      let idCounter = 1;
+      OLD_REGIONS.forEach(prov => {
+        prov.districts.forEach(dist => {
+          dist.communes.forEach(comm => {
+            const i = idCounter++;
+            const isApproved = i % 3 !== 0;
+            data.push({
+              id: i,
+              tinhMoi: 'Gia Lai',
+              tinhCu: prov.province,
+              huyen: dist.name,
+              xa: comm,
+              tenQh: `Quy hoạch chung xây dựng ${comm.toLowerCase()} (Định hướng đến 2045)`,
+              dienTich: (50 + (i % 150)).toFixed(2),
+              danSo: (5000 + (i * 120)).toLocaleString('en-US'),
+              cqToChuc: `UBND ${comm.replace('Xã ', 'xã ').replace('P. ', 'phường ')}`,
+              cqPheDuyet: `UBND ${dist.name}`,
+              cqThamDinh: 'Phòng Kinh tế & Hạ tầng / Quản lý Đô thị',
+              bcThamDinh: isApproved ? `${100 + i}/BC-UBND` : 'Đang cập nhật',
+              yKienSxd: 'Đã thống nhất theo kết luận thẩm định',
+              qdPheDuyet: isApproved ? `${1000 + i}/QĐ-UBND` : 'Đang trình duyệt',
+              congBo: isApproved ? 'Đã công bố' : 'Chưa công bố',
+              camMoc: isApproved ? 'Đã cắm mốc' : 'Chưa cắm mốc',
+              keHoach: isApproved ? 'Đã ban hành' : 'Đang xây dựng',
+              file: '',
+              mapLink: '',
+              tinhHinhGuiHoSo: isApproved ? 'Đã gửi' : 'Chưa gửi',
+              ghiChu: 'Theo Nghị quyết sáp nhập đơn vị hành chính'
+            });
+          });
+        });
+      });
+      return data;
+    };
+
+    const generateDetailRecords = () => {
+      const data = [];
+      let idCounter = 1;
+      let globalIndex = 0;
+      OLD_REGIONS.forEach(prov => {
+        prov.districts.forEach(dist => {
+          dist.communes.forEach(comm => {
+            globalIndex++;
+            const numProjects = (globalIndex % 3) + 1;
+            for (let j = 0; j < numProjects; j++) {
+              const i = idCounter++;
+              const isApproved = i % 4 !== 0;
+              data.push({
+                id: i,
+                tinhMoi: 'Gia Lai',
+                tinhCu: prov.province,
+                huyen: dist.name,
+                xa: comm,
+                tenQh: j === 0 
+                  ? `Quy hoạch chi tiết khu trung tâm ${comm.toLowerCase()} (Tỷ lệ 1/500)` 
+                  : `Quy hoạch chi tiết điểm dân cư số ${j} thuộc ${comm.toLowerCase()} (Tỷ lệ 1/500)`,
+                dienTich: (10 + (i % 40)).toFixed(2),
+                danSo: (1000 + (i * 15)).toLocaleString('en-US'),
+                cqToChuc: `UBND ${comm.replace('Xã ', 'xã ').replace('P. ', 'phường ')}`,
+                cqPheDuyet: `UBND ${dist.name}`,
+                cqThamDinh: 'Phòng Kinh tế / Quản lý Đô thị',
+                bcThamDinh: isApproved ? `${200 + i}/BC-UBND` : 'Đang cập nhật',
+                yKienSxd: 'Phân cấp địa phương',
+                qdPheDuyet: isApproved ? `${2000 + i}/QĐ-UBND` : 'Đang cập nhật',
+                congBo: isApproved ? 'Đã công bố' : 'Chưa công bố',
+                camMoc: isApproved ? 'Đã cắm mốc' : 'Chưa cắm mốc',
+                keHoach: isApproved ? 'Đã ban hành' : 'Đang cập nhật',
+                file: '',
+                mapLink: '',
+                tinhHinhGuiHoSo: isApproved ? 'Đã gửi' : 'Chưa gửi',
+                ghiChu: 'Cụ thể hóa QHC'
+              });
+            }
+          });
+        });
+      });
+      return data;
+    };
+
+    const INITIAL_MERGED_DATA = [
+      { id: 1, tinhCu: 'Bình Định', huyen: 'TP Quy Nhơn', xaMoi: 'P. Quy Nhơn', cacXaCu: ['Phường Hải Cảng', 'Phường Thị Nại', 'Phường Trần Phú', 'Phường Đống Đa'], canCu: 'Nghị quyết 1664/NQ-UBTVQH15' },
+      { id: 2, tinhCu: 'Gia Lai', huyen: 'Thị xã An Khê', xaMoi: 'P. An Khê', cacXaCu: ['Phường An Phú', 'Phường An Tân', 'Xã Tú An'], canCu: 'Nghị quyết 1664/NQ-UBTVQH15' }
+    ];
+
+    const COLUMNS = [
+      { key: 'stt', label: 'STT', width: 'w-12' },
+      { key: 'tinhMoi', label: 'Tỉnh mới', width: 'w-24' },
+      { key: 'tinhCu', label: 'Tỉnh cũ', width: 'w-24' },
+      { key: 'huyen', label: 'Huyện/Thị xã', width: 'w-36' },
+      { key: 'xa', label: 'Xã/Phường', width: 'w-36' },
+      { key: 'tenQh', label: 'Tên quy hoạch', width: 'min-w-[250px] max-w-[350px]' },
+      { key: 'dienTich', label: 'Diện tích (ha)', width: 'w-28' },
+      { key: 'danSo', label: 'Dân số', width: 'w-32' },
+      { key: 'cqToChuc', label: 'CQ tổ chức lập', width: 'w-40' },
+      { key: 'cqPheDuyet', label: 'CQ phê duyệt', width: 'w-40' },
+      { key: 'cqThamDinh', label: 'CQ thẩm định', width: 'w-40' },
+      { key: 'bcThamDinh', label: 'BC thẩm định', width: 'w-36' },
+      { key: 'yKienSxd', label: 'Ý kiến Sở XD', width: 'w-36' },
+      { key: 'qdPheDuyet', label: 'QĐ phê duyệt', width: 'w-36' },
+      { key: 'congBo', label: 'Công bố', width: 'w-28' },
+      { key: 'camMoc', label: 'Cắm mốc', width: 'w-28' },
+      { key: 'keHoach', label: 'Kế hoạch TH', width: 'w-36' },
+      { key: 'tinhHinhGuiHoSo', label: 'Gửi hồ sơ SXD', width: 'w-36' },
+      { key: 'ghiChu', label: 'Ghi chú', width: 'min-w-[150px]' }
+    ];
+
+    // ==========================================
+    // 4. MAIN APP COMPONENT
+    // ==========================================
+    function App() {
+      const [isLoggedIn, setIsLoggedIn] = useState(false);
+      const [data, setData] = useState([]);
+      const [detailData, setDetailData] = useState([]);
+      const [mergedData, setMergedData] = useState([]);
+      const [notification, setNotification] = useState('');
+      const [activeTab, setActiveTab] = useState('STATS_CHUNG');
+      const [searchTerm, setSearchTerm] = useState('');
+      const [filterHuyen, setFilterHuyen] = useState('');
+
+      useEffect(() => {
+        // Tải dữ liệu mặc định vào State khi chạy Standalone
+        setData(generate135Records());
+        setDetailData(generateDetailRecords());
+        setMergedData(INITIAL_MERGED_DATA);
+      }, []);
+
+      const showNotification = (msg) => {
+        setNotification(msg);
+        setTimeout(() => setNotification(''), 4000);
+      };
+
+      // Xuất file CSV (Đã sửa lỗi Template String)
+      const handleExportExcel = (exportData, sheetName, isDetail = false) => {
+        if (!exportData || exportData.length === 0) return showNotification('Không có dữ liệu để xuất!');
+        const headers = COLUMNS.map(col => `${isDetail && col.key === 'danSo' ? 'Dân số' : col.label}`).join(',');
+        const rows = exportData.map((row, index) => {
+          return COLUMNS.map(col => {
+            const val = col.key === 'stt' ? (index + 1) : (row[col.key] || '');
+            return `"${val.toString().replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " ")}"`;
+          }).join(',');
+        });
+        const csvContent = [headers, ...rows].join('\n');
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${sheetName}_${new Date().getTime()}.csv`;
+        link.click();
+      };
+
+      const filteredData = useMemo(() => {
+        return data.filter(item => {
+          const matchSearch = (item.tenQh || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              (item.xa || '').toLowerCase().includes(searchTerm.toLowerCase());
+          const matchHuyen = filterHuyen === '' || item.huyen === filterHuyen;
+          return matchSearch && matchHuyen;
+        });
+      }, [data, searchTerm, filterHuyen]);
+
+      return (
+        <div class="min-h-screen flex flex-col">
+          {/* Header */}
+          <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
+            <div>
+              <h1 class="text-xl font-bold">HỆ THỐNG QUẢN LÝ QUY HOẠCH & DỮ LIỆU HÀNH CHÍNH GIA LAI</h1>
+              <p class="text-xs text-blue-200">Phiên bản tích hợp Quản lý Đô thị & Đơn vị hành chính sáp nhập</p>
+            </div>
+            <button 
+              onClick={() => setIsLoggedIn(!isLoggedIn)} 
+              class="px-4 py-2 bg-blue-700 hover:bg-blue-600 rounded text-sm font-semibold transition"
+            >
+              {isLoggedIn ? 'Đăng xuất' : 'Đăng nhập Quản trị'}
+            </button>
+          </header>
+
+          {/* Thông báo Alert */}
+          {notification && (
+            <div class="bg-green-600 text-white px-4 py-2 text-center text-sm font-medium shadow">
+              {notification}
+            </div>
+          )}
+
+          {/* Thanh điều hướng Tabs */}
+          <nav class="bg-white border-b border-slate-200 px-4 flex space-x-2">
+            {[
+              { id: 'STATS_CHUNG', label: 'Quy hoạch Chung' },
+              { id: 'STATS_CHITIET', label: 'Quy hoạch Chi tiết' },
+              { id: 'STATS_SAPNHAP', label: 'Đơn vị Sáp nhập' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                class={`py-3 px-4 text-sm font-medium border-b-2 transition ${
+                  activeTab === tab.id 
+                    ? 'border-blue-600 text-blue-600' 
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Nội dung chính */}
+          <main class="flex-1 p-4 max-w-7xl w-full mx-auto">
+            {/* Bộ lọc tìm kiếm */}
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mb-4 flex flex-wrap gap-4 justify-between items-center">
+              <div class="flex flex-wrap gap-2 flex-1">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm tên quy hoạch, xã/phường..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  class="p-2 border border-slate-300 rounded text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <select
+                  value={filterHuyen}
+                  onChange={(e) => setFilterHuyen(e.target.value)}
+                  class="p-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Tất cả Huyện/Thị xã --</option>
+                  {OLD_REGIONS[4].districts.map(d => (
+                    <option key={d.name} value={d.name}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={() => handleExportExcel(filteredData, 'QuyHoachChung')}
+                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium flex items-center gap-1 transition"
+              >
+                Xuất Excel CSV
+              </button>
+            </div>
+
+            {/* Bảng hiển thị dữ liệu */}
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-700">
+                  <tr>
+                    {COLUMNS.map(col => (
+                      <th key={col.key} class={`p-3 font-semibold ${col.width}`}>{col.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  {filteredData.slice(0, 50).map((row, idx) => (
+                    <tr key={row.id} class="hover:bg-slate-50 transition">
+                      <td class="p-3 text-slate-500">{idx + 1}</td>
+                      <td class="p-3">{row.tinhMoi}</td>
+                      <td class="p-3">{row.tinhCu}</td>
+                      <td class="p-3 font-medium">{row.huyen}</td>
+                      <td class="p-3">{row.xa}</td>
+                      <td class="p-3 text-blue-900 font-medium">{row.tenQh}</td>
+                      <td class="p-3">{row.dienTich}</td>
+                      <td class="p-3">{row.danSo}</td>
+                      <td class="p-3">{row.cqToChuc}</td>
+                      <td class="p-3">{row.cqPheDuyet}</td>
+                      <td class="p-3">{row.cqThamDinh}</td>
+                      <td class="p-3">{row.bcThamDinh}</td>
+                      <td class="p-3">{row.yKienSxd}</td>
+                      <td class="p-3">{row.qdPheDuyet}</td>
+                      <td class="p-3">
+                        <span class={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                          row.congBo === 'Đã công bố' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {row.congBo}
+                        </span>
+                      </td>
+                      <td class="p-3">{row.camMoc}</td>
+                      <td class="p-3">{row.keHoach}</td>
+                      <td class="p-3">{row.tinhHinhGuiHoSo}</td>
+                      <td class="p-3 text-slate-500">{row.ghiChu}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredData.length === 0 && (
+                <div class="p-8 text-center text-slate-500 text-sm">Không tìm thấy dữ liệu phù hợp!</div>
+              )}
+            </div>
+          </main>
+
+          {/* Footer */}
+          <footer class="bg-slate-800 text-slate-400 text-xs p-4 text-center border-t border-slate-700">
+            © 2026 Sở Xây dựng Tỉnh Gia Lai - Hệ thống Quản lý Dữ liệu Quy hoạch Đô thị & Nông thôn
+          </footer>
+        </div>
+      );
+    }
+
+    // Render App
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
 </html>
