@@ -14,25 +14,16 @@
   
   <!-- Babel Standalone (Biên dịch JSX trực tiếp trên trình duyệt) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased font-sans">
   <div id="root"></div>
 
   <!-- Mã nguồn React Component -->
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
+    const { useState, useEffect, useMemo } = React;
 
     // ==========================================
-    // 1. CẤU HÌNH BIẾN TOÀN CỤC & FIREBASE STUB
-    // ==========================================
-    const appId = "gialai-planning-app";
-    const db = null; // Cấu hình Firebase Firestore thực tế nếu cần kết nối CSDL Cloud
-
-    // ==========================================
-    // 2. DỮ LIỆU HÀNH CHÍNH & SÁP NHẬP (GIA LAI & BÌNH ĐỊNH)
+    // 1. DỮ LIỆU HÀNH CHÍNH (GIA LAI & BÌNH ĐỊNH)
     // ==========================================
     const OLD_REGIONS = [
       {
@@ -75,8 +66,11 @@
       }
     ];
 
+    // Lấy danh sách toàn bộ Huyện/Thị xã phẳng từ mảng OLD_REGIONS
+    const ALL_DISTRICTS = OLD_REGIONS.flatMap(p => p.districts);
+
     // ==========================================
-    // 3. HÀM TẠO DỮ LIỆU TỰ ĐỘNG (ĐÃ SỬA DẤU BACKTICKS ` `)
+    // 2. HÀM TẠO DỮ LIỆU
     // ==========================================
     const generate135Records = () => {
       const data = [];
@@ -187,7 +181,7 @@
     ];
 
     // ==========================================
-    // 4. MAIN APP COMPONENT
+    // 3. MAIN APP COMPONENT
     // ==========================================
     function App() {
       const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -200,7 +194,6 @@
       const [filterHuyen, setFilterHuyen] = useState('');
 
       useEffect(() => {
-        // Tải dữ liệu mặc định vào State khi chạy Standalone
         setData(generate135Records());
         setDetailData(generateDetailRecords());
         setMergedData(INITIAL_MERGED_DATA);
@@ -211,10 +204,9 @@
         setTimeout(() => setNotification(''), 4000);
       };
 
-      // Xuất file CSV (Đã sửa lỗi Template String)
-      const handleExportExcel = (exportData, sheetName, isDetail = false) => {
+      const handleExportExcel = (exportData, sheetName) => {
         if (!exportData || exportData.length === 0) return showNotification('Không có dữ liệu để xuất!');
-        const headers = COLUMNS.map(col => `${isDetail && col.key === 'danSo' ? 'Dân số' : col.label}`).join(',');
+        const headers = COLUMNS.map(col => col.label).join(',');
         const rows = exportData.map((row, index) => {
           return COLUMNS.map(col => {
             const val = col.key === 'stt' ? (index + 1) : (row[col.key] || '');
@@ -229,26 +221,32 @@
         link.click();
       };
 
+      // Lọc dữ liệu theo Tab hiện tại
+      const currentDataset = useMemo(() => {
+        if (activeTab === 'STATS_CHITIET') return detailData;
+        return data;
+      }, [activeTab, data, detailData]);
+
       const filteredData = useMemo(() => {
-        return data.filter(item => {
+        return currentDataset.filter(item => {
           const matchSearch = (item.tenQh || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                               (item.xa || '').toLowerCase().includes(searchTerm.toLowerCase());
           const matchHuyen = filterHuyen === '' || item.huyen === filterHuyen;
           return matchSearch && matchHuyen;
         });
-      }, [data, searchTerm, filterHuyen]);
+      }, [currentDataset, searchTerm, filterHuyen]);
 
       return (
-        <div class="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col">
           {/* Header */}
-          <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
+          <header className="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
             <div>
-              <h1 class="text-xl font-bold">HỆ THỐNG QUẢN LÝ QUY HOẠCH & DỮ LIỆU HÀNH CHÍNH GIA LAI</h1>
-              <p class="text-xs text-blue-200">Phiên bản tích hợp Quản lý Đô thị & Đơn vị hành chính sáp nhập</p>
+              <h1 className="text-xl font-bold">HỆ THỐNG QUẢN LÝ QUY HOẠCH & DỮ LIỆU HÀNH CHÍNH GIA LAI</h1>
+              <p className="text-xs text-blue-200">Sở Xây dựng Tỉnh Gia Lai - Quản lý Đô thị & Đơn vị hành chính sáp nhập</p>
             </div>
             <button 
               onClick={() => setIsLoggedIn(!isLoggedIn)} 
-              class="px-4 py-2 bg-blue-700 hover:bg-blue-600 rounded text-sm font-semibold transition"
+              className="px-4 py-2 bg-blue-700 hover:bg-blue-600 rounded text-sm font-semibold transition"
             >
               {isLoggedIn ? 'Đăng xuất' : 'Đăng nhập Quản trị'}
             </button>
@@ -256,13 +254,13 @@
 
           {/* Thông báo Alert */}
           {notification && (
-            <div class="bg-green-600 text-white px-4 py-2 text-center text-sm font-medium shadow">
+            <div className="bg-green-600 text-white px-4 py-2 text-center text-sm font-medium shadow">
               {notification}
             </div>
           )}
 
-          {/* Thanh điều hướng Tabs */}
-          <nav class="bg-white border-b border-slate-200 px-4 flex space-x-2">
+          {/* Navigation Tabs */}
+          <nav className="bg-white border-b border-slate-200 px-4 flex space-x-2">
             {[
               { id: 'STATS_CHUNG', label: 'Quy hoạch Chung' },
               { id: 'STATS_CHITIET', label: 'Quy hoạch Chi tiết' },
@@ -271,7 +269,7 @@
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                class={`py-3 px-4 text-sm font-medium border-b-2 transition ${
+                className={`py-3 px-4 text-sm font-medium border-b-2 transition ${
                   activeTab === tab.id 
                     ? 'border-blue-600 text-blue-600' 
                     : 'border-transparent text-slate-600 hover:text-slate-900'
@@ -282,95 +280,124 @@
             ))}
           </nav>
 
-          {/* Nội dung chính */}
-          <main class="flex-1 p-4 max-w-7xl w-full mx-auto">
-            {/* Bộ lọc tìm kiếm */}
-            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mb-4 flex flex-wrap gap-4 justify-between items-center">
-              <div class="flex flex-wrap gap-2 flex-1">
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm tên quy hoạch, xã/phường..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  class="p-2 border border-slate-300 rounded text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <select
-                  value={filterHuyen}
-                  onChange={(e) => setFilterHuyen(e.target.value)}
-                  class="p-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- Tất cả Huyện/Thị xã --</option>
-                  {OLD_REGIONS[4].districts.map(d => (
-                    <option key={d.name} value={d.name}>{d.name}</option>
-                  ))}
-                </select>
-              </div>
+          {/* Main Content */}
+          <main className="flex-1 p-4 max-w-7xl w-full mx-auto">
+            {activeTab !== 'STATS_SAPNHAP' ? (
+              <>
+                {/* Search & Filter Bar */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mb-4 flex flex-wrap gap-4 justify-between items-center">
+                  <div className="flex flex-wrap gap-2 flex-1">
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm tên quy hoạch, xã/phường..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="p-2 border border-slate-300 rounded text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <select
+                      value={filterHuyen}
+                      onChange={(e) => setFilterHuyen(e.target.value)}
+                      className="p-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">-- Tất cả Huyện/Thị xã --</option>
+                      {ALL_DISTRICTS.map(d => (
+                        <option key={d.name} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <button
-                onClick={() => handleExportExcel(filteredData, 'QuyHoachChung')}
-                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium flex items-center gap-1 transition"
-              >
-                Xuất Excel CSV
-              </button>
-            </div>
+                  <button
+                    onClick={() => handleExportExcel(filteredData, activeTab)}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium flex items-center gap-1 transition"
+                  >
+                    Xuất Excel CSV
+                  </button>
+                </div>
 
-            {/* Bảng hiển thị dữ liệu */}
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-x-auto">
-              <table class="w-full text-left text-xs border-collapse">
-                <thead class="bg-slate-50 border-b border-slate-200 text-slate-700">
-                  <tr>
-                    {COLUMNS.map(col => (
-                      <th key={col.key} class={`p-3 font-semibold ${col.width}`}>{col.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  {filteredData.slice(0, 50).map((row, idx) => (
-                    <tr key={row.id} class="hover:bg-slate-50 transition">
-                      <td class="p-3 text-slate-500">{idx + 1}</td>
-                      <td class="p-3">{row.tinhMoi}</td>
-                      <td class="p-3">{row.tinhCu}</td>
-                      <td class="p-3 font-medium">{row.huyen}</td>
-                      <td class="p-3">{row.xa}</td>
-                      <td class="p-3 text-blue-900 font-medium">{row.tenQh}</td>
-                      <td class="p-3">{row.dienTich}</td>
-                      <td class="p-3">{row.danSo}</td>
-                      <td class="p-3">{row.cqToChuc}</td>
-                      <td class="p-3">{row.cqPheDuyet}</td>
-                      <td class="p-3">{row.cqThamDinh}</td>
-                      <td class="p-3">{row.bcThamDinh}</td>
-                      <td class="p-3">{row.yKienSxd}</td>
-                      <td class="p-3">{row.qdPheDuyet}</td>
-                      <td class="p-3">
-                        <span class={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          row.congBo === 'Đã công bố' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {row.congBo}
-                        </span>
-                      </td>
-                      <td class="p-3">{row.camMoc}</td>
-                      <td class="p-3">{row.keHoach}</td>
-                      <td class="p-3">{row.tinhHinhGuiHoSo}</td>
-                      <td class="p-3 text-slate-500">{row.ghiChu}</td>
+                {/* Data Table */}
+                <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-700">
+                      <tr>
+                        {COLUMNS.map(col => (
+                          <th key={col.key} className={`p-3 font-semibold ${col.width}`}>{col.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredData.slice(0, 50).map((row, idx) => (
+                        <tr key={row.id} className="hover:bg-slate-50 transition">
+                          <td className="p-3 text-slate-500">{idx + 1}</td>
+                          <td className="p-3">{row.tinhMoi}</td>
+                          <td className="p-3">{row.tinhCu}</td>
+                          <td className="p-3 font-medium">{row.huyen}</td>
+                          <td className="p-3">{row.xa}</td>
+                          <td className="p-3 text-blue-900 font-medium">{row.tenQh}</td>
+                          <td className="p-3">{row.dienTich}</td>
+                          <td className="p-3">{row.danSo}</td>
+                          <td className="p-3">{row.cqToChuc}</td>
+                          <td className="p-3">{row.cqPheDuyet}</td>
+                          <td className="p-3">{row.cqThamDinh}</td>
+                          <td className="p-3">{row.bcThamDinh}</td>
+                          <td className="p-3">{row.yKienSxd}</td>
+                          <td className="p-3">{row.qdPheDuyet}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              row.congBo === 'Đã công bố' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {row.congBo}
+                            </span>
+                          </td>
+                          <td className="p-3">{row.camMoc}</td>
+                          <td className="p-3">{row.keHoach}</td>
+                          <td className="p-3">{row.tinhHinhGuiHoSo}</td>
+                          <td className="p-3 text-slate-500">{row.ghiChu}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              /* Table Sáp nhập */
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-700">
+                    <tr>
+                      <th className="p-3 font-semibold w-12">STT</th>
+                      <th className="p-3 font-semibold w-28">Tỉnh (Cũ)</th>
+                      <th className="p-3 font-semibold w-36">Huyện/Thị xã</th>
+                      <th className="p-3 font-semibold w-36">Đơn vị mới</th>
+                      <th className="p-3 font-semibold">Đơn vị hành chính sáp nhập</th>
+                      <th className="p-3 font-semibold w-48">Căn cứ pháp lý</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredData.length === 0 && (
-                <div class="p-8 text-center text-slate-500 text-sm">Không tìm thấy dữ liệu phù hợp!</div>
-              )}
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {mergedData.map((row, idx) => (
+                      <tr key={row.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3 text-slate-500">{idx + 1}</td>
+                        <td className="p-3">{row.tinhCu}</td>
+                        <td className="p-3 font-medium">{row.huyen}</td>
+                        <td className="p-3 text-blue-900 font-bold">{row.xaMoi}</td>
+                        <td className="p-3">{Array.isArray(row.cacXaCu) ? row.cacXaCu.join(', ') : row.cacXaCu}</td>
+                        <td className="p-3 text-slate-500">{row.canCu}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </main>
 
           {/* Footer */}
-          <footer class="bg-slate-800 text-slate-400 text-xs p-4 text-center border-t border-slate-700">
+          <footer className="bg-slate-800 text-slate-400 text-xs p-4 text-center border-t border-slate-700">
             © 2026 Sở Xây dựng Tỉnh Gia Lai - Hệ thống Quản lý Dữ liệu Quy hoạch Đô thị & Nông thôn
           </footer>
         </div>
       );
     }
 
-    // Render App
+    // Render React App
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
